@@ -50,6 +50,7 @@ var preload = function() {
 var create = function() {
 
 	this.players_mapping = {};
+	this.game.stage.disableVisibilityChange = true;
 
 	console.log("Inside create");
 	console.log(this.players_mapping);
