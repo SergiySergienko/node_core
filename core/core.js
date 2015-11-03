@@ -82,7 +82,7 @@ Core.prototype.client_handle_input = function() {
     	// Save to local history and send as snapshot to server
         this.moving_local_enabled = true;
 
-    	current_session.current_seq += 1;
+    	// current_session.current_seq += 1;
         current_session.last_input_seq = current_session.current_seq;
     	var packet_data = {
     		"s": current_session.current_seq,

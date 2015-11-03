@@ -23,6 +23,10 @@ socket.on('s.j', function(game_session_data) {
   current_session.apply_from_pack(game_session_data);
 });
 
+socket.on('s.s', function(seq_value) {
+  current_session.current_seq = parseInt(seq_value);
+});
+
 socket.on('s.u', function(snapshot_data) {
   // console.log("Server snapshot received", snapshot_data);
   current_session.client_handle_server_snapshot(snapshot_data);

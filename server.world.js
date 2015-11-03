@@ -13,6 +13,7 @@ module.exports = {
 	intervals: {},
 	physic_call_period_ms: Math.round(1000/66), // run server world for 66 fps
 	broadcast_call_period_ms: Math.round(1000/22), // run server world for 45 fps
+	inc_seq_interval_ms: 1000,
 	max_players_per_game: 2,
 
 	find_game: function(socket) {
@@ -72,7 +73,18 @@ module.exports = {
 													this.broadcast_clients_data(game_instance);
 												}.bind(this), this.broadcast_call_period_ms);
 
-		this.intervals[game_instance.gid] = [physics_interval, broadcast_interval];
+		var seq_interval = setInterval(function() {
+													game_instance.increment_seq();
+													this.send_seq_data(game_instance);
+												}.bind(this), this.inc_seq_interval_ms);
+
+		this.intervals[game_instance.gid] = [physics_interval, broadcast_interval, seq_interval];
+		return true;
+	},
+	send_seq_data: function (game_instance) {
+		for (var player of game_instance.players) {
+			player.socket.emit('s.s', game_instance.current_seq);
+		}
 		return true;
 	},
 	server_animation_frame: function(game_instance) {
@@ -96,7 +108,7 @@ module.exports = {
 		for (var player of game_instance.players) {
 			player.socket.emit('s.u', server_pack);
 		}
-		game_instance.current_seq += 1;
+		// game_instance.current_seq += 1;
 		// console.log("send server update");
 	},
 	analyze_inputs: function(game_instance) {
@@ -105,18 +117,21 @@ module.exports = {
 			var seq_index = -1;
 			for (var i=0; i <= game_instance.server_pendings.length-1; i++) {
 				var pending_pack = game_instance.server_pendings[i];
-				if (game_instance.current_seq == parseInt(pending_pack.s)) {
+				if ((game_instance.current_seq-1) == parseInt(pending_pack.s)) {
 					seq_index = i;
+				}
+				if (game_instance.current_seq == parseInt(pending_pack.s)) {
 					break;
 				}
 			}
 			// Delete old pendings
 			if (seq_index != -1) {
 				var number_to_clear = Math.abs(seq_index - (-1));
+				console.log("Number to clear", number_to_clear);
 				game_instance.server_pendings.splice(0, number_to_clear);
 			}
 			if (game_instance.server_pendings.length) {
-				game_instance.apply_next_pending();
+				game_instance.apply_next_pendings();
 			}
 		}
 	}

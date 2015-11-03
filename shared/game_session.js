@@ -24,6 +24,11 @@ var GameSession = function() {
 	console.log(this);
 };
 
+GameSession.prototype.increment_seq = function() {
+	this.current_seq += 1;
+	return this.current_seq;
+};
+
 GameSession.prototype.current_player = function() {
 	if (this.current_player_link) {
 		return this.current_player_link;
@@ -130,12 +135,18 @@ GameSession.prototype.apply_from_pack = function(gs_data) {
 	return this;
 };
 
-GameSession.prototype.apply_next_pending = function() {	
-	var pending = this.server_pendings[0];
+GameSession.prototype.apply_next_pendings = function() {
+console.log("Current SEQ: ", this.current_seq);
+	console.log("Pendings ARE: ", this.server_pendings);
+	for (var i=0; i <= this.server_pendings.length-1; i++) {
+		var pending = this.server_pendings[i];
 
-	var player = this.get_player_by_id(pending.pid);
-	var new_points = this.core_instance.input_to_points(player, pending.i);
-	this.current_seq = parseInt(pending.s);
+		var player = this.get_player_by_id(pending.pid);
+		var new_points = this.core_instance.input_to_points(player, pending.i);
+		this.server_pendings.splice(0, (i - (-1)));
+	}
+	
+	// this.current_seq = parseInt(pending.s);
 	
 	// console.log("Server seq: ", this.current_seq);
 	return this;
