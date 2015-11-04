@@ -83,7 +83,7 @@ Client.prototype.add_missing_players = function () {
 				player_sprite["barrel"] = barrel;
 
 				this.players_mapping[p_data.id] = player_sprite;
-				this.players_mapping[p_data.id]["is_moving"] = false;
+				
 			}
 		}
 	}

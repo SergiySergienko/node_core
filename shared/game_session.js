@@ -58,7 +58,6 @@ GameSession.prototype.delete_player = function(player_id) {
 			return false
 		return true
 	});
-	console.log("Filtered players", this, player_id);
 	return this;
 };
 
@@ -68,7 +67,6 @@ GameSession.prototype.get_free_places = function() {
 
 GameSession.prototype.add_player = function(player_data) {
 	this.players.push(player_data);
-	console.log("Player added!!!", player_data, this.players);
 	return this.players;
 };
 
@@ -178,7 +176,7 @@ GameSession.prototype.get_player_by_id = function(player_id) {
 // Than cleanup old pendings data
 //
 GameSession.prototype.client_proceed_pendings = function() {
-	// console.log("Applying pending", this.current_seq, this.server_current_seq);
+	
 	var current_client_seq = this.current_seq;
 	var last_server_snapshot = this.server_pendings[this.server_pendings.length-1];
 	var actual_snapshot = null;
@@ -204,7 +202,7 @@ GameSession.prototype.client_proceed_pendings = function() {
 		}
 
 		actual_snapshot = last_server_snapshot;
-		// console.log("Processing snapshots: ", actual_snapshot);
+		
 
 		for (var i=0; i <= last_server_snapshot.players.length-1; i++) {
 			var player_data = last_server_snapshot.players[i];

@@ -2,7 +2,6 @@ var Player = function () {
 	
 	this.id = '';
 	this.socket = '';
-	this.move_speed = 4;
 	
 	this.client_updates = [];
 	this.server_updates = [];
@@ -15,6 +14,7 @@ var Player = function () {
 
 Player.barrel_rotation_speed = 4;
 Player.radius = 40;
+Player.move_speed = 4;
 
 Player.prototype.set_pos = function (new_x, new_y, new_a) {
 	if (new_x)

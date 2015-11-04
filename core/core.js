@@ -34,16 +34,16 @@ Core.prototype.input_to_points = function (player, input_commands) {
 		if (comm.length) {
 			for(var c of comm) {
 				if (c == "l") {
-					player.x -= player.move_speed;
+					player.x -= Player.move_speed;
 				}
 				if (c == "u") {
-					player.y -= player.move_speed;
+					player.y -= Player.move_speed;
 				}
 				if (c == "r") {
-					player.x += player.move_speed;
+					player.x += Player.move_speed;
 				}
 				if (c == "d") {
-					player.y += player.move_speed;
+					player.y += Player.move_speed;
 				}
 			}
 		}
@@ -68,22 +68,22 @@ Core.prototype.client_handle_input = function() {
 	if (this.game.input.keyboard.isDown(Phaser.Keyboard.LEFT))
     {
         inputs.push("l");   
-        result.x = -4;
+        result.x = -Player.move_speed;
     }
     if (this.game.input.keyboard.isDown(Phaser.Keyboard.RIGHT))
     {
     	inputs.push("r");
-        result.x = 4;
+        result.x = Player.move_speed;
     }
     if (this.game.input.keyboard.isDown(Phaser.Keyboard.DOWN))
     {
     	inputs.push("d");
-        result.y = 4;
+        result.y = Player.move_speed;
     }
     if (this.game.input.keyboard.isDown(Phaser.Keyboard.UP))
     {
     	inputs.push("u");
-        result.y = -4;
+        result.y = -Player.move_speed;
     }
     if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
     {
@@ -92,7 +92,6 @@ Core.prototype.client_handle_input = function() {
 
     if (inputs.length) {
     	// Save to local history and send as snapshot to server
-        this.moving_local_enabled = true;
 
     	// current_session.current_seq += 1;
         current_session.last_input_seq = current_session.current_seq;
@@ -104,9 +103,7 @@ Core.prototype.client_handle_input = function() {
     	current_session.local_history.push(packet_data);
     	socket.emit('c.i', packet_data);
     }
-    else {
-        this.moving_local_enabled= false;
-    }
+
     return result;
 };
 
@@ -114,7 +111,6 @@ Core.prototype.client_handle_input = function() {
 Core.prototype.server_handle_client_input = function(packet_data, player_id) {
 	packet_data.pid = player_id;
 	this.server_pendings.push(packet_data);
-	// console.log('Server Proceed snapshot from client: ', packet_data);
 	return true;
 };
 
@@ -125,7 +121,6 @@ Core.prototype.client_handle_server_snapshot = function(packet_data) {
 	var pack_data = this.parse_pack(packet_data);
 	this.server_pendings.push(pack_data);
 	return true;
-	// console.log('Server Proceed snapshot from client: ', packet_data);
 };
 
 //server side we set the 'Core' class to a global type, so that it can use it anywhere.

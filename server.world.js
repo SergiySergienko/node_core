@@ -24,7 +24,7 @@ module.exports = {
 			for (var key in this.games) {
 
 				var tmp_game = this.games[key];
-				console.log("Free places are ", tmp_game.get_free_places(), tmp_game);
+				
 				if (tmp_game.get_free_places() <= 0) {
 					// This room has no free places
 					need_to_create_new = true;
@@ -112,8 +112,6 @@ module.exports = {
 		for (var player of game_instance.players) {
 			player.socket.emit('s.u', server_pack);
 		}
-		// game_instance.current_seq += 1;
-		// console.log("send server update");
 	},
 	analyze_inputs: function(game_instance) {
 		if (game_instance.server_pendings.length) {
@@ -131,7 +129,6 @@ module.exports = {
 			// Delete old pendings
 			if (seq_index != -1) {
 				var number_to_clear = Math.abs(seq_index - (-1));
-				console.log("Number to clear", number_to_clear);
 				game_instance.server_pendings.splice(0, number_to_clear);
 			}
 			if (game_instance.server_pendings.length) {
