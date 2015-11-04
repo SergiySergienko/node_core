@@ -51,6 +51,14 @@ Core.prototype.input_to_points = function (player, input_commands) {
 	return player;
 };
 
+Core.prototype.angle_to_xy = function (current_angle, radius, center_x, center_y) {
+    var result = {x:0, y:0};
+    var angle_radians = current_angle * (Math.PI/180);
+    result.x = (center_x + radius * Math.cos(angle_radians)).fixed();
+    result.y = (center_y + radius * Math.sin(angle_radians)).fixed();
+    return result;
+};
+
 // Client method only
 Core.prototype.client_handle_input = function() {
 
@@ -76,6 +84,10 @@ Core.prototype.client_handle_input = function() {
     {
     	inputs.push("u");
         result.y = -4;
+    }
+    if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
+    {
+        inputs.push("f");
     }
 
     if (inputs.length) {

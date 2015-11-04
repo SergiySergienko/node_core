@@ -95,6 +95,10 @@ module.exports = {
 
 		this.analyze_inputs(game_instance);
 
+		game_instance.analyze_collisions();
+
+		game_instance.inc_barrel_angle();
+
 		return true;
 	},
 	broadcast_clients_data: function (game_instance) {

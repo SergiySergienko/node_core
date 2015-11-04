@@ -1,7 +1,7 @@
 var Client = function () {
 	this.game_ui = '';
-	this.game_width = 640;
-	this.game_height = 480;
+	this.game_width = GameSession.world_width;
+	this.game_height = GameSession.world_height;
 	this.max_pixels_num_to_jump = 100;
 };
 
@@ -21,6 +21,8 @@ Client.prototype.redraw_debug_info = function() {
 Client.prototype.preload = function () {
 	console.log("Inside preload");
 	this.game.time.advancedTiming = true;
+	this.game.load.image('mushroom', 'images/mushroom2.png');
+	this.game.load.image('ball', 'images/ball.png');
 };
 
 Client.prototype.create = function () {
@@ -33,7 +35,7 @@ Client.prototype.create = function () {
 	this.server_lag_text = this.game.add.text(10, 10, 'serv lag: 0 ms', { fill: '#ffffff', fontSize: '11px' });
 	this.client_lag_text = this.game.add.text(100, 10, 'client lag: 0 ms', { fill: '#ffffff', fontSize: '11px' });
 	this.fps_text = this.game.add.text(200, 10, 'FPS: 0', { fill: '#ffffff', fontSize: '11px' });
-	// var t = setInterval(function () { current_session.client_proceed_pendings(); }.bind(this), 200);
+	// var t = setInterval(function () { current_session.client_proceed_pendings(); this.redraw_players(this.delta_t); }.bind(this), 1000);
 };
 
 Client.prototype.update = function () {
@@ -43,8 +45,9 @@ Client.prototype.update = function () {
 	this.add_missing_players();
 
 	current_session.client_proceed_pendings();
-
 	this.redraw_players(this.delta_t);
+
+	this.redraw_barrels();
 
 	if (new_pos.x != 0 || new_pos.y != 0) {
 		if (this.players_mapping[current_pid]) {
@@ -72,8 +75,14 @@ Client.prototype.add_missing_players = function () {
 			var p_data = current_session.players[i];
 
 			if (!this.players_mapping[p_data.id]) {
-				var p_text = this.game.add.text(p_data.x, p_data.y, 'P: ' + p_data.id, { fill: '#ffffff' });
-				this.players_mapping[p_data.id] = p_text;
+				var player_sprite = this.game.add.sprite(p_data.x, p_data.y, 'mushroom');
+				player_sprite.anchor.set(.5, .5);
+				var barrel = this.game.add.sprite(p_data.x, p_data.y, 'ball');
+				barrel.anchor.set(.5, .5);
+				player_sprite.addChild(barrel);
+				player_sprite["barrel"] = barrel;
+
+				this.players_mapping[p_data.id] = player_sprite;
 				this.players_mapping[p_data.id]["is_moving"] = false;
 			}
 		}
@@ -86,7 +95,7 @@ Client.prototype.redraw_players = function (delta_t) {
 		// console.log("Server last seq:", current_session.server_current_seq, current_session.last_input_seq, current_session.current_seq);
 		return true;
 	}
-	
+
 	if (current_session.players.length) {
 		for (var i=0; i <= current_session.players.length-1; i++) {
 			var p_data = current_session.players[i];
@@ -94,6 +103,7 @@ Client.prototype.redraw_players = function (delta_t) {
 			// console.log(p_data.id, p_data.x, p_data.y, this.players_mapping[p_data.id].x, this.players_mapping[p_data.id].y);
 
 			if (this.players_mapping[p_data.id]) {
+				var barrel_xy;
 
 				if (Math.round(p_data.x) != Math.round(this.players_mapping[p_data.id].x) || Math.round(p_data.y) != Math.round(this.players_mapping[p_data.id].y)) {
 					
@@ -101,15 +111,25 @@ Client.prototype.redraw_players = function (delta_t) {
 						Math.abs(Math.round(p_data.y) - Math.round(this.players_mapping[p_data.id].y)) >= this.max_pixels_num_to_jump) 
 					{
 						// Hard Set position if difference is too much
-						this.players_mapping[p_data.id].is_moving = true;
+						
 						this.players_mapping[p_data.id].x = p_data.x;
 						this.players_mapping[p_data.id].y = p_data.y;
+						
+						// barrel_xy = current_session.core_instance.angle_to_xy(p_data.a, 70, p_data.x, p_data.y);
+						// this.players_mapping[p_data.id].barrel.x = barrel_xy.x;
+						// this.players_mapping[p_data.id].barrel.y = barrel_xy.y;
 					} 
 					else {
 						// Else interpolate to target point
-						this.players_mapping[p_data.id].is_moving = true;
+						
 						this.players_mapping[p_data.id].x = current_session.core_instance.lerp(this.players_mapping[p_data.id].x, p_data.x, 4 * delta_t);
 						this.players_mapping[p_data.id].y = current_session.core_instance.lerp(this.players_mapping[p_data.id].y, p_data.y, 4 * delta_t);
+
+
+						// barrel_xy = current_session.core_instance.angle_to_xy(p_data.a, 70, p_data.x, p_data.y);
+						// console.log("Redraw angles", p_data, barrel_xy, this.players_mapping[p_data.id].barrel.x, this.players_mapping[p_data.id].barrel.y);
+						// this.players_mapping[p_data.id].barrel.x = barrel_xy.x;
+						// this.players_mapping[p_data.id].barrel.y = barrel_xy.y;
 					}
 					
 
@@ -118,13 +138,29 @@ Client.prototype.redraw_players = function (delta_t) {
 
 					// console.log("Move !!!:", p_data.id, this.players_mapping[p_data.id].x, this.players_mapping[p_data.id].y, p_data.x, p_data.y);
 				}
-				else {
-					this.players_mapping[p_data.id].is_moving = false;
-				}
+				
 			}
 
 		}
 	}
+};
+
+Client.prototype.redraw_barrels = function () {
+
+	if (current_session.players.length) {
+		for (var i=0; i <= current_session.players.length-1; i++) {
+			var p_data = current_session.players[i];
+
+			if (this.players_mapping[p_data.id]) {
+				var barrel_xy = current_session.core_instance.angle_to_xy(p_data.a, Player.radius, this.players_mapping[p_data.id].x, this.players_mapping[p_data.id].y);;
+				this.players_mapping[p_data.id].barrel.x = (barrel_xy.x - this.players_mapping[p_data.id].x);
+				this.players_mapping[p_data.id].barrel.y = (barrel_xy.y - this.players_mapping[p_data.id].y);
+			}
+
+		}
+	}
+
+	return true;
 };
 
 Client.prototype.update_client_lag_info = function () {

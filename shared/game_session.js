@@ -3,6 +3,7 @@
 // and objects manipulation functions
 //
 var GameSession = function() { 
+	
 	this.last_update_time = new Date().getTime();
 	this.server_render_time = 0;
 	this.client_render_time = 0;
@@ -17,12 +18,16 @@ var GameSession = function() {
 	this.server_pendings = [];
 
 	this.players = [];
+	this.bullets = [];
 	this.game_entities = [];
 	this.gid = '';
 	this.core_instance = new Core();
 	this.current_player_link = false;
-	console.log(this);
+	
 };
+
+GameSession.world_width = 640;
+GameSession.world_height = 480;
 
 GameSession.prototype.increment_seq = function() {
 	this.current_seq += 1;
@@ -136,8 +141,7 @@ GameSession.prototype.apply_from_pack = function(gs_data) {
 };
 
 GameSession.prototype.apply_next_pendings = function() {
-console.log("Current SEQ: ", this.current_seq);
-	console.log("Pendings ARE: ", this.server_pendings);
+
 	for (var i=0; i <= this.server_pendings.length-1; i++) {
 		var pending = this.server_pendings[i];
 
@@ -146,9 +150,6 @@ console.log("Current SEQ: ", this.current_seq);
 		this.server_pendings.splice(0, (i - (-1)));
 	}
 	
-	// this.current_seq = parseInt(pending.s);
-	
-	// console.log("Server seq: ", this.current_seq);
 	return this;
 };
 
@@ -304,6 +305,40 @@ GameSession.prototype.server_handle_client_input = function(packet_data, player_
 
 GameSession.prototype.client_handle_server_snapshot = function(packet_data) {
 	return this.core_instance.client_handle_server_snapshot.call(this, packet_data);
+};
+
+GameSession.prototype.analyze_collisions = function() {
+	if (this.players.length) {
+		for (var i=0; i <= this.players.length-1; i++) {
+			
+			if (this.players[i].x >= GameSession.world_width) {
+				this.players[i].x = GameSession.world_width;
+			}
+			if (this.players[i].x <= 0) {
+				this.players[i].x = 0;
+			}
+			if (this.players[i].y >= GameSession.world_height) {
+				this.players[i].y = GameSession.world_height;
+			}
+			if (this.players[i].y <= 0) {
+				this.players[i].y = 0;
+			}
+
+		}
+	}
+};
+
+GameSession.prototype.inc_barrel_angle = function() {
+	if (this.players.length) {
+		for (var i=0; i <= this.players.length-1; i++) {			
+			if (this.players[i].a < 360) {
+				this.players[i].a += Player.barrel_rotation_speed;
+			}
+			else {
+				this.players[i].a = 0;
+			}
+		}
+	}
 };
 
 //server side we set the 'Core' class to a global type, so that it can use it anywhere.
