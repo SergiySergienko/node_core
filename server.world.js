@@ -11,8 +11,8 @@ module.exports = {
 	games: {},
 	games_count: 0,
 	intervals: {},
-	physic_call_period_ms: Math.round(1000/66), // run server world for 66 fps
-	broadcast_call_period_ms: Math.round(1000/22), // run server world for 45 fps
+	physic_call_period_ms: Core.physics_update_period, // run server world for 66 fps
+	broadcast_call_period_ms: Math.round(1000/4), // run server world for 45 fps
 	inc_seq_interval_ms: 1000,
 	max_players_per_game: 2,
 
@@ -82,7 +82,7 @@ module.exports = {
 		return true;
 	},
 	send_seq_data: function (game_instance) {
-		for (var player of game_instance.players) {
+		for (player of game_instance.players) {
 			player.socket.emit('s.s', game_instance.current_seq);
 		}
 		return true;
@@ -90,19 +90,26 @@ module.exports = {
 	server_animation_frame: function(game_instance) {
 		var curr_time = new Date().getTime();
 
-		game_instance.server_render_time = (curr_time - game_instance.last_update_time); // calc server lag time
-		game_instance.last_update_time = new Date().getTime(); // refresh last server render time
-
 		this.analyze_inputs(game_instance);
+
+        game_instance.server_update_physics();
+
+        game_instance.inc_barrel_angle();
 
 		game_instance.analyze_collisions();
 
-		game_instance.inc_barrel_angle();
+        game_instance.server_render_time = (curr_time - game_instance.last_update_time); // calc server lag time
+        game_instance.delta_t = (game_instance.server_render_time/1000);
 
+        //console.log(game_instance.delta_t);
+
+        game_instance.last_update_time = new Date().getTime(); // refresh last server render time
+        //console.log("Finished in", (game_instance.last_update_time - curr_time));
 		return true;
 	},
 	broadcast_clients_data: function (game_instance) {
-		
+
+        game_instance.local_history[game_instance.current_seq.toString()] = game_instance.to_pack(true);
 		this.send_snapshot(game_instance);
 
 		return true;
@@ -114,12 +121,19 @@ module.exports = {
 		}
 	},
 	analyze_inputs: function(game_instance) {
+        var seq_to_delete = game_instance.current_seq-2;
+
+        if (game_instance.local_history.hasOwnProperty(seq_to_delete.toString())) {
+            delete(game_instance.local_history[seq_to_delete.toString()]);
+        }
+
 		if (game_instance.server_pendings.length) {
 			
 			var seq_index = -1;
 			for (var i=0; i <= game_instance.server_pendings.length-1; i++) {
 				var pending_pack = game_instance.server_pendings[i];
-				if ((game_instance.current_seq-1) == parseInt(pending_pack.s)) {
+
+                if ((seq_to_delete) == parseInt(pending_pack.s)) {
 					seq_index = i;
 				}
 				if (game_instance.current_seq == parseInt(pending_pack.s)) {
@@ -131,8 +145,9 @@ module.exports = {
 				var number_to_clear = Math.abs(seq_index - (-1));
 				game_instance.server_pendings.splice(0, number_to_clear);
 			}
+
 			if (game_instance.server_pendings.length) {
-				game_instance.apply_next_pendings();
+				game_instance.apply_pendings(game_instance.current_seq-1);
 			}
 		}
 	}

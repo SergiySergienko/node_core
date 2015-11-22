@@ -7,6 +7,8 @@ var Core = function() {
     this.moving_local_enabled = false;
 };
 
+Core.physics_update_period = Math.round(1000/66); // Shared value for phys update interval
+
 Core.prototype.handle_server_input = function() {
 
 };
@@ -51,19 +53,41 @@ Core.prototype.input_to_points = function (player, input_commands) {
 	return player;
 };
 
+Core.prototype.init_fly_vector = function (x, y, angle, radius) {
+    var barrel_pos = this.angle_to_xy(angle, radius, x, y);
+    var player_pos = { "x": x, "y": y };
+    //console.log(angle);
+
+    return this.calc_bullet_end_pos(player_pos, barrel_pos);
+};
+
 Core.prototype.angle_to_xy = function (current_angle, radius, center_x, center_y) {
     var result = {x:0, y:0};
-    var angle_radians = current_angle * (Math.PI/180);
-    result.x = (center_x + radius * Math.cos(angle_radians)).fixed();
-    result.y = (center_y + radius * Math.sin(angle_radians)).fixed();
+    var normalized_angle = (current_angle < 0 ? (180 + (180 - Math.abs(current_angle))) : current_angle);
+    console.log("Normal angle:", normalized_angle, current_angle);
+    var angle_radians = normalized_angle * (Math.PI/180);
+    result.x = (center_x + (radius * Math.cos(angle_radians))).fixed();
+    result.y = (center_y + (radius * Math.sin(angle_radians))).fixed();
+    //console.log("Bla bla", current_angle, radius, center_x, center_y, result);
     return result;
+};
+
+Core.prototype.calc_bullet_end_pos = function (point_one, point_two) {
+    var len = Math.hypot((point_two.x - point_one.x), (point_two.y - point_one.y));
+    var dx = (point_two.x - point_one.x)/len;
+    var dy = (point_two.y - point_one.y)/len;
+
+    var end_x = (point_one.x + GameSession.bullet_fly_max_length * dx);
+    var end_y = (point_one.y + GameSession.bullet_fly_max_length * dy);
+
+    return { "x": end_x.fixed(), "y": end_y.fixed() };
 };
 
 // Client method only
 Core.prototype.client_handle_input = function() {
 
 	var inputs = [];
-    var result = { "x": 0, "y": 0 };
+    var result = { "x": 0, "y": 0, "bullet": false };
 
 	if (this.game.input.keyboard.isDown(Phaser.Keyboard.LEFT))
     {
@@ -88,6 +112,7 @@ Core.prototype.client_handle_input = function() {
     if (this.game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
     {
         inputs.push("f");
+        result.bullet = true;
     }
 
     if (inputs.length) {
@@ -100,11 +125,27 @@ Core.prototype.client_handle_input = function() {
     		"t": current_session.last_update_time,
     		"i": inputs.join("-")
     	};
-    	current_session.local_history.push(packet_data);
+
     	socket.emit('c.i', packet_data);
     }
+    // console.log(result);
 
     return result;
+};
+
+Core.prototype.client_run_callback = function() {
+    var inputs = ["f"];
+
+    current_session.last_input_seq = current_session.current_seq;
+
+    var packet_data = {
+        "s": current_session.current_seq,
+        "t": current_session.last_update_time,
+        "i": inputs.join("-")
+    };
+
+    socket.emit('c.i', packet_data);
+
 };
 
 // Server method only

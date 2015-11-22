@@ -14,20 +14,28 @@ var GameSession = function() {
 	this.server_current_seq = 0;
 	this.last_input_seq = 0;
 
-	this.local_history = [];
+    this.last_applied_packet_time = 0;
+
+	this.local_history = {};
 	this.server_pendings = [];
 
 	this.players = [];
-	this.bullets = [];
+	this.bullets = {};
+	this.bullet_local_history = {};
 	this.game_entities = [];
 	this.gid = '';
 	this.core_instance = new Core();
 	this.current_player_link = false;
+	this.delta_t = 0;
+
+    this.show_debug = false;
 	
 };
 
 GameSession.world_width = 640;
 GameSession.world_height = 480;
+GameSession.bullet_fly_max_length = 350;
+GameSession.bullet_fly_speed = 0.5;
 
 GameSession.prototype.increment_seq = function() {
 	this.current_seq += 1;
@@ -89,19 +97,22 @@ GameSession.prototype.init_new_player = function(socket) {
 	player.id = socket.id;
 	player.socket = socket;
 	player.name = "John";
-	player.x = 0;
-	player.y = 0;
+	player.x = 50;
+	player.y = 50;
 	player.a = 0;
 
 	return player;
 };
 
 
-GameSession.prototype.to_pack = function() {
+GameSession.prototype.to_pack = function(not_stringify) {
 	var data = [this.current_seq, this.players.length, this.server_render_time, new Date().getTime()];
 	for (var player of this.players) {
-		data.push([player.id, player.x, player.y, player.a]);
+		data.push(player.to_pack());
 	}
+    if (not_stringify) {
+        return data;
+    }
 	return JSON.stringify(data);
 };
 
@@ -122,7 +133,15 @@ GameSession.prototype.parse_pack = function(gs_data) {
 		player.x = p_data[1];
 		player.y = p_data[2];
 		player.a = p_data[3];
+		
+		// this is bullet coords
+		if (p_data[4] && p_data[5]) {
+			player.fly_x = p_data[4];
+			player.fly_y = p_data[5];
+		}
+
 		result.players.push(player);
+		
 	}
 	
 	return result;
@@ -138,14 +157,56 @@ GameSession.prototype.apply_from_pack = function(gs_data) {
 	return this;
 };
 
-GameSession.prototype.apply_next_pendings = function() {
+// Server method
+// Analyze inputs and run simple algorithms
+GameSession.prototype.apply_pendings = function(seq_to_apply) {
 
-	for (var i=0; i <= this.server_pendings.length-1; i++) {
-		var pending = this.server_pendings[i];
+	var i = 0;
+    for (pending of this.server_pendings) {
+		//var pending = this.server_pendings[i];
 
-		var player = this.get_player_by_id(pending.pid);
-		var new_points = this.core_instance.input_to_points(player, pending.i);
-		this.server_pendings.splice(0, (i - (-1)));
+		if (parseInt(pending.s) == parseInt(seq_to_apply)) {
+
+            var player = this.get_player_by_id(pending.pid);
+
+
+            //var new_points = this.core_instance.input_to_points(player, pending.i);
+
+            var arr = pending.i.split("-");
+            var bullet_data;
+
+            if (arr.indexOf("f") != -1 && !player.is_moving()) {
+                var old_data = this.local_history[seq_to_apply.toString()];
+                var old_p_data = { "x": 0, "y": 0, "a": 0 };
+                for (var i=4; i <= old_data.length-1; i++) {
+
+                    if (old_data[i][0] == pending.pid) {
+
+                        old_p_data.x = old_data[i][1];
+                        old_p_data.y = old_data[i][2];
+                        old_p_data.a = old_data[i][3];
+
+                        break;
+                    }
+                }
+
+                bullet_data = this.core_instance.init_fly_vector(old_p_data.x, old_p_data.y, old_p_data.a, Player.radius);
+                //var curr_dt = new Date().getTime();
+                //var diff = (curr_dt - pending.t);
+                //var p_diff = (curr_dt - old_data[3])
+                //console.log("End vec is:", bullet_data);
+
+                player.set_moving_pos(bullet_data.x, bullet_data.y);
+                player.set_is_moving();
+
+                //console.log(diff, p_diff, this.current_seq, old_data[0]);
+                //this.add_bullet(pending.pid, bullet_data);
+            }
+
+            this.server_pendings.splice(i, 1);
+
+        }
+        i+=1;
 	}
 	
 	return this;
@@ -176,121 +237,71 @@ GameSession.prototype.get_player_by_id = function(player_id) {
 // Than cleanup old pendings data
 //
 GameSession.prototype.client_proceed_pendings = function() {
-	
-	var current_client_seq = this.current_seq;
-	var last_server_snapshot = this.server_pendings[this.server_pendings.length-1];
-	var actual_snapshot = null;
 
-	if (last_server_snapshot) {
+    var pending_data;
 
-		var server_seq = last_server_snapshot.seq;
-		var next_local_snapshot = '';
-		var local_seq_indx = -1;
+    if (this.server_pendings.length > 0) {
 
-		
-		// Find last received server's seq in local snapshots history
-		for (var i=0; i <= this.local_history.length-1; i++) {
-			if (parseInt(this.local_history[i].s) == parseInt(server_seq)) {
-				local_seq_indx = i;
-				break;
-			}
-		}
-		if (local_seq_indx != -1) {
-			// Cleanup old (already processed by server) pendings
-			var number_to_clear = Math.abs(local_seq_indx - (-1));
-			this.local_history.splice(0, number_to_clear);
-		}
+        for (var i=0; i <= this.server_pendings.length-1; i++) {
+            pending_data = this.server_pendings[i];
+            if ((this.current_seq - this.last_input_seq) >= 2) {
+                this.last_input_seq = 0;
+            }
 
-		actual_snapshot = last_server_snapshot;
-		
+            for (player_data of pending_data.players) {
+                //var player_data = pending_data.players[a];
 
-		for (var i=0; i <= last_server_snapshot.players.length-1; i++) {
-			var player_data = last_server_snapshot.players[i];
-			
-			if (current_pid == player_data.id) {
-				// THIS IS PREDICTIONS FOR LOCAL PLAYER ONLY
-				//
-				// if local history has snapshots after cleanup
-				// This is client's preddictions implementation
-				// We used every next after server's processed snapshot from local history
-				// as thrully right, and we make coords smooth changes
-				
-				// if (this.local_history[0]) {
-				// 	var local_snapshot = this.local_history[0];
-				// 	if (parseInt(local_snapshot.s) == parseInt(server_seq)+1) {
-				// 		// We didnt loose any packets yet, everithing is OK
-				// 		// actual_snapshot = last_server_snapshot;
+                if (player_data.id == current_pid) {
 
-				// 		// this.current_player.set_new_pos(player_data.x, player_data.y, player_data.a);
+                    // This is current player data
+                    if (this.last_input_seq > 0) { // Do we wait for server corrections ? yes - than correct position
+                        if (parseInt(pending_data.seq) == parseInt(this.last_input_seq+1)) { // This is next seq after input ends
+                            this.current_player().set_pos(player_data.x, player_data.y, player_data.a);
+                            this.current_player().mark_as_updated();
+                        }
+                    }
+                    else {
+                        this.current_player().set_pos(player_data.x, player_data.y, player_data.a);
+                        this.current_player().mark_as_updated();
+                    }
 
-				// 		// console.log("This is true next snapshot:", local_snapshot, last_server_snapshot);
-				// 	}
-				// 	else {
-				// 		// This is not next snapshot, something went wrong
-				// 		// We should compare those packs timestamps to max difference
+                    if (player_data.fly_x && player_data.fly_y) {
+                        this.current_player().set_moving_pos(player_data.fly_x, player_data.fly_y);
+                        this.current_player().set_is_moving();
+                    }
+                    else {
+                        this.current_player().set_moving_pos(0, 0);
+                        this.current_player().unset_is_moving();
+                    }
 
-				// 		if ((last_server_snapshot.pack_time - local_snapshot.s) > this.max_pack_time_difference) {
-				// 			// OMG the time diff is too match, seems we loose a lot of packets
-				// 			// roll back to last servers processed snapshot, becouse server is allways Right :)
-				// 			// actual_snapshot = last_server_snapshot;
+                }
+                else {
+                    // This is not current player, just set immediately new position
+                    if (!this.get_player_by_id(player_data.id)) {
+                        this.add_player(player_data);
+                    }
+                    var player = this.get_player_by_id(player_data.id);
 
-				// 			this.current_player().set_pos(player_data.x, player_data.y, player_data.a);
+                    player.set_pos(player_data.x, player_data.y, player_data.a);
+                    player.mark_as_updated();
 
-				// 			// console.log("Fuck:", local_snapshot, last_server_snapshot);
-				// 		} 
-				// 		else {
-				// 			// Ok, everithing is not so bad ))
-				// 			// reset position to data from snapshot
-				// 			// this.current_player().set_new_pos(player_data.x, player_data.y, player_data.a);
+                    if (player_data.fly_x && player_data.fly_y) {
+                        player.set_moving_pos(player_data.fly_x, player_data.fly_y);
+                    }
+                    else {
+                        player.set_moving_pos(0, 0);
+                        player.unset_is_moving();
+                    }
 
-				// 			// actual_snapshot = last_server_snapshot;
-				// 			// console.log("Unknown snapshot:", actual_snapshot, this.current_seq);
-				// 		}
-				// 	}
-				// }
-				// else {
-				// 	// We have no data in local history but server sent us some changes
-				// 	// other players movement etc.
-				// 	this.current_player().set_pos(player_data.x, player_data.y, player_data.a);
-				// }
+                }
 
-				this.current_player().set_pos(player_data.x, player_data.y, player_data.a);
-				
-			}
-			else {
-				if (this.get_player_by_id(player_data.id)) {
-					this.get_player_by_id(player_data.id).set_pos(player_data.x, player_data.y, player_data.a);
-				} 
-				else {
-					this.add_player(player_data);
-					this.get_player_by_id(player_data.id).set_pos(player_data.x, player_data.y, player_data.a);
-				}
-			}
-		}
+            }
 
-		// Set current snapshot index to last actual
-		// if (actual_snapshot) {
-			this.current_seq = last_server_snapshot.seq;
-			this.server_render_time = last_server_snapshot.server_render_time;
-		// }
+            this.last_applied_packet_time = pending_data.pack_time;
+            this.server_pendings.splice(i, 1);
+        }
+    }
 
-		this.server_current_seq = server_seq; // Save last server processed for debug
-		
-		// Cleanup server's pendings
-		local_seq_indx = -1;
-		for (var i=0; i <= this.server_pendings.length-1; i++) {
-			if (parseInt(this.server_pendings[i].seq) == parseInt(this.current_seq)) {
-				local_seq_indx = i;
-				break;
-			}
-		}
-		if (local_seq_indx != -1) {
-			// Cleanup old (already processed by server) pendings
-			number_to_clear = Math.abs(local_seq_indx - (-1));
-			this.server_pendings.splice(0, number_to_clear);
-		}
-		// this.server_pendings.splice(0, this.server_pendings.length-1);
-	}
 	return true;
 };
 
@@ -307,37 +318,72 @@ GameSession.prototype.client_handle_server_snapshot = function(packet_data) {
 
 GameSession.prototype.analyze_collisions = function() {
 	if (this.players.length) {
-		for (var i=0; i <= this.players.length-1; i++) {
+        var need_stop = false;
+        for (player_data of this.players) {
 			
-			if (this.players[i].x >= GameSession.world_width) {
-				this.players[i].x = GameSession.world_width;
-			}
-			if (this.players[i].x <= 0) {
-				this.players[i].x = 0;
-			}
-			if (this.players[i].y >= GameSession.world_height) {
-				this.players[i].y = GameSession.world_height;
-			}
-			if (this.players[i].y <= 0) {
-				this.players[i].y = 0;
-			}
-
+			if (player_data.x >= GameSession.world_width) {
+                player_data.x = GameSession.world_width;
+                need_stop = true;
+            }
+			if (player_data.x <= 0) {
+                player_data.x = 0;
+                need_stop = true;
+            }
+			if (player_data.y >= GameSession.world_height) {
+                player_data.y = GameSession.world_height;
+                need_stop = true;
+            }
+			if (player_data.y <= 0) {
+                player_data.y = 0;
+                need_stop = true;
+            }
+            if (need_stop) {
+                player_data.set_moving_pos(0, 0);
+                player_data.unset_is_moving();
+            }
 		}
 	}
+    return true;
 };
 
 GameSession.prototype.inc_barrel_angle = function() {
 	if (this.players.length) {
-		for (var i=0; i <= this.players.length-1; i++) {			
-			if (this.players[i].a < 360) {
-				this.players[i].a += Player.barrel_rotation_speed;
-			}
-			else {
-				this.players[i].a = 0;
-			}
-		}
+        var offset = (Player.barrel_rotation_speed * this.delta_t).fixed();
+        //console.log(this.delta_t);
+
+        for (player_data of this.players) {
+            if ((player_data.a + offset) >= 180) {
+                player_data.a = 180;
+                player_data.a *= -1;
+            }
+            player_data.a = (player_data.a + offset).fixed();
+
+        }
+
 	}
+    return true;
 };
+
+GameSession.prototype.server_update_physics = function () {
+    var move_speed = (Player.move_speed * this.delta_t);
+    for (player_data of this.players) {
+        if (player_data.is_moving()) {
+            player_data.x = this.core_instance.lerp(player_data.x, player_data.fly_x, move_speed);
+            player_data.y = this.core_instance.lerp(player_data.y, player_data.fly_y, move_speed);
+
+            if (Math.round(player_data.x) == Math.round(player_data.fly_x) && Math.round(player_data.y) == Math.round(player_data.fly_y)) {
+
+                player_data.set_moving_pos(0, 0);
+                player_data.x = 50;
+                player_data.y = 50;
+                player_data.unset_is_moving();
+            }
+            //console.log(player_data.x, player_data.y, player_data.fly_x, player_data.fly_y);
+        }
+    }
+    return true;
+};
+
 
 //server side we set the 'Core' class to a global type, so that it can use it anywhere.
 if( 'undefined' != typeof global ) {
