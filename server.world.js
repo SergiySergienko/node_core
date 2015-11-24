@@ -65,9 +65,8 @@ module.exports = {
 		return curr_game;
 	},
 	run_game_world: function (game_instance) {
-		var physics_interval = setInterval(function() {
-													this.server_animation_frame(game_instance);
-												}.bind(this), this.physic_call_period_ms);
+
+        this.update(game_instance, this.after_update);
 
 		var broadcast_interval = setInterval(function() {
 													this.broadcast_clients_data(game_instance);
@@ -78,7 +77,7 @@ module.exports = {
 													this.send_seq_data(game_instance);
 												}.bind(this), this.inc_seq_interval_ms);
 
-		this.intervals[game_instance.gid] = [physics_interval, broadcast_interval, seq_interval];
+		this.intervals[game_instance.gid] = [broadcast_interval, seq_interval];
 		return true;
 	},
 	send_seq_data: function (game_instance) {
@@ -87,9 +86,23 @@ module.exports = {
 		}
 		return true;
 	},
-	server_animation_frame: function(game_instance) {
-		var curr_time = new Date().getTime();
+	update: function (game_instance, callback) {
 
+        var curr_time = new Date().getTime();
+        game_instance.server_render_time = (curr_time - game_instance.last_update_time); // calc server lag time
+        game_instance.delta_t = (game_instance.server_render_time/1000);
+
+        this.server_animation_frame(game_instance);
+        callback.call(this, game_instance);
+	},
+    after_update: function (game_instance) {
+        var call_offset = Math.max(0, (this.physic_call_period_ms - game_instance.server_render_time));
+
+        game_instance.physics_timer = setTimeout(function() { this.update(game_instance, this.after_update); }.bind(this), call_offset);
+
+        game_instance.last_update_time = new Date().getTime(); // refresh last server render time
+    },
+	server_animation_frame: function(game_instance) {
 		this.analyze_inputs(game_instance);
 
         game_instance.server_update_physics();
@@ -97,15 +110,7 @@ module.exports = {
         game_instance.inc_barrel_angle();
 
 		game_instance.analyze_collisions();
-
-        game_instance.server_render_time = (curr_time - game_instance.last_update_time); // calc server lag time
-        game_instance.delta_t = (game_instance.server_render_time/1000);
-
-        //console.log(game_instance.delta_t);
-
-        game_instance.last_update_time = new Date().getTime(); // refresh last server render time
-        //console.log("Finished in", (game_instance.last_update_time - curr_time));
-		return true;
+        return true;
 	},
 	broadcast_clients_data: function (game_instance) {
 

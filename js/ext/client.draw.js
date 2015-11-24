@@ -91,9 +91,9 @@ Client.prototype.rotate_players = function (players_data) {
                     //player_sprite.angle = next;
                 }
             }
-            //else {
-            player_sprite.angle += (Player.barrel_rotation_speed * this.delta_t).fixed();
-            //}
+            else {
+                player_sprite.angle += (Player.barrel_rotation_speed * this.delta_t).fixed();
+            }
 
         }
     }

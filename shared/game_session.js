@@ -28,6 +28,10 @@ var GameSession = function() {
 	this.current_player_link = false;
 	this.delta_t = 0;
 
+    this.physics_timer;
+    this.broadcast_timer;
+    this.seq_inc_timer;
+
     this.show_debug = false;
 	
 };

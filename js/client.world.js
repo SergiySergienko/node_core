@@ -44,17 +44,20 @@ Client.prototype.create = function () {
 
     this.run_button = this.game.add.button(this.game.world.centerX - 95, this.game.world.height - 80, 'button', this.run_click, this, 2, 1, 0);
 
-    this.physics_update_interval = setInterval(
-        function () {
-            current_session.client_proceed_pendings();
-        }.bind(this),
-        Core.physics_update_period);
+    //this.physics_update_interval = setInterval(
+    //    function () {
+    //        current_session.client_proceed_pendings();
+    //    }.bind(this),
+    //    Core.physics_update_period);
 };
 
 Client.prototype.update = function () {
 
     this.delta_t = (this.game.time.elapsed/1000).fixed();
 	current_session.delta_t = this.delta_t;
+
+	current_session.client_proceed_pendings();
+
 	this.redraw_debug_info();
 
     this.redraw_players(current_session.players);
