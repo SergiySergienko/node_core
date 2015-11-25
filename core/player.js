@@ -10,18 +10,23 @@ var Player = function () {
 	this.y = 0;
 	this.a = 0;
 
+    this.start_x = 0;
+    this.start_y = 0;
+    this.start_a = 0;
+
 	this.fly_x = 0;
 	this.fly_y = 0;
 
 	this.need_smooth_correction = false;
 	this.need_correct_angle = false;
     this.is_moving_now = false;
+    this.is_rotating = false;
 
 };
 
 Player.barrel_rotation_speed = 100;
 Player.radius = 40;
-Player.move_speed = 4;
+Player.move_speed = 1;
 
 
 Player.prototype.to_pack = function () {
@@ -42,6 +47,24 @@ Player.prototype.set_pos = function (new_x, new_y, new_a) {
 	if (new_a)
 		this.a = new_a;
 	return this;
+};
+
+Player.prototype.reset_to_start = function () {
+    this.set_moving_pos(0, 0);
+    this.x = this.start_x;
+    this.y = this.start_y;
+    this.unset_is_moving();
+    return true;
+};
+
+Player.prototype.set_start_pos = function (new_x, new_y, new_a) {
+    if (new_x)
+        this.start_x = new_x;
+    if (new_y)
+        this.start_y = new_y;
+    if (new_a)
+        this.start_a = new_a;
+    return this;
 };
 
 Player.prototype.set_angle = function (new_a) {
@@ -70,24 +93,15 @@ Player.prototype.set_moving_pos = function (end_x, end_y) {
     return true;
 };
 
-//Player.prototype.init_bullet_data = function (core_klass) {
-//
-//	var barrel_pos = core_klass.angle_to_xy(this.a, Player.radius, this.x, this.y);
-//	var player_pos = { "x": this.x, "y": this.y };
-//
-//	var v_end_pos = core_klass.calc_bullet_end_pos(player_pos, barrel_pos);
-//
-//	var result = { "start": barrel_pos,
-//					"end": v_end_pos,
-//					"x": barrel_pos.x,
-//					"y": barrel_pos.y,
-//					"server_x": barrel_pos.x,
-//					"server_y": barrel_pos.y,
-//					"t": new Date().getTime()
-//	};
-//
-//	return result;
-//};
+Player.prototype.set_as_rotating = function () {
+    this.is_rotating = true;
+    return true;
+};
+
+Player.prototype.stop_rotating = function () {
+    this.is_rotating = false;
+    return true;
+};
 
 Player.prototype.get_preddicted_angle = function () {
     var result = this.a;

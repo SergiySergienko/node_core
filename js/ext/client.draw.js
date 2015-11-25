@@ -62,6 +62,7 @@ Client.prototype.rotate_players = function (players_data) {
 
                 var curr_dt = new Date().getTime();
                 var time_diff = ((curr_dt - current_session.last_applied_packet_time)/1000).fixed();  // diff sec between packet and now
+                //console.log(px_per_frame, time_diff, this.delta_t);
 
                 //var frame_time = (1000/this.game.time.fps).fixed();
 
@@ -77,23 +78,37 @@ Client.prototype.rotate_players = function (players_data) {
                 var current_sprite_angle = player_sprite.angle.fixed();
 
                 var offset = ((time_diff / this.delta_t) * px_per_frame).fixed();
+
+
+                //if (Math.abs(current_sprite_angle) > Math.abs(p_data.a)) {
+                //    // We are moving to fast, easy bro.
+                //    offset = (offset/2).fixed();
+                //}
+                //else {
+                //    // We are moving to slow. Faster, harder!!
+                //
+                //}
+
                 var next = (p_data.a + offset).fixed();
 
+                p_data.mark_angle_fixed();
 
-                if (current_sprite_angle.fixed(1) == next.fixed(1)) {
-                    //console.log("correct");
-                    current_session.get_player_by_id(p_data.id).mark_angle_fixed();
-                }
-                else {
+                //if (current_sprite_angle.fixed(1) == next.fixed(1)) {
+                //    console.log("correct");
+                //    current_session.get_player_by_id(p_data.id).mark_angle_fixed();
+                //}
+                //else {
                     //console.log("Lerping angle", current_sprite_angle, next);
-                    //console.log("New angle received", current_sprite_angle, p_data.a, next);
+                    //console.log("Angle info before", current_sprite_angle, p_data.a, next);
                     player_sprite.angle = current_session.core_instance.lerp(current_sprite_angle, next, (Player.barrel_rotation_speed * this.delta_t).fixed());
+                    //console.log("After", current_sprite_angle, p_data.a, next);
                     //player_sprite.angle = next;
-                }
+                //}
             }
             else {
-                player_sprite.angle += (Player.barrel_rotation_speed * this.delta_t).fixed();
+                player_sprite.angle += px_per_frame;
             }
+            //console.log("Angles: ", player_sprite.angle);
 
         }
     }

@@ -6,15 +6,18 @@ var UUID = require('node-uuid');
 require("./core/player.js");
 require("./core/core.js");
 require("./shared/game_session.js");
+require("./shared/physics.methods.js");
 
 module.exports = {
 	games: {},
 	games_count: 0,
 	intervals: {},
 	physic_call_period_ms: Core.physics_update_period, // run server world for 66 fps
-	broadcast_call_period_ms: Math.round(1000/4), // run server world for 45 fps
+	broadcast_call_period_ms: Math.round(1000/2), // run server world for 45 fps
 	inc_seq_interval_ms: 1000,
 	max_players_per_game: 2,
+    core_instance: new Core(),
+    base_physics_instance: new BasePhysics(),
 
 	find_game: function(socket) {
 		var game;
@@ -53,7 +56,10 @@ module.exports = {
 		return game;
 	},
 	create_game: function() {
-		var curr_game = new GameSession();
+        var curr_game = new GameSession();
+        curr_game.core_instance = this.core_instance;
+        this.base_physics_instance.core_instance = this.core_instance;
+
 		curr_game.gid = UUID();
 		this.games[curr_game.gid] = curr_game;
 		this.games_count += 1;
@@ -101,15 +107,20 @@ module.exports = {
         game_instance.physics_timer = setTimeout(function() { this.update(game_instance, this.after_update); }.bind(this), call_offset);
 
         game_instance.last_update_time = new Date().getTime(); // refresh last server render time
+        return true;
     },
 	server_animation_frame: function(game_instance) {
 		this.analyze_inputs(game_instance);
 
-        game_instance.server_update_physics();
+        if (game_instance.players.length) {
+            var delta_t = game_instance.delta_t;
+            for (player_data of game_instance.players) {
+                this.base_physics_instance.server_update_physics(player_data, delta_t);
+                this.base_physics_instance.inc_barrel_angle(player_data, delta_t);
+                this.base_physics_instance.analyze_collisions(player_data, delta_t);
+            }
+        }
 
-        game_instance.inc_barrel_angle();
-
-		game_instance.analyze_collisions();
         return true;
 	},
 	broadcast_clients_data: function (game_instance) {
@@ -126,7 +137,7 @@ module.exports = {
 		}
 	},
 	analyze_inputs: function(game_instance) {
-        var seq_to_delete = game_instance.current_seq-2;
+        var seq_to_delete = game_instance.current_seq-3;
 
         if (game_instance.local_history.hasOwnProperty(seq_to_delete.toString())) {
             delete(game_instance.local_history[seq_to_delete.toString()]);
@@ -134,26 +145,26 @@ module.exports = {
 
 		if (game_instance.server_pendings.length) {
 			
-			var seq_index = -1;
-			for (var i=0; i <= game_instance.server_pendings.length-1; i++) {
-				var pending_pack = game_instance.server_pendings[i];
+			//var seq_index = -1;
+			//for (var i=0; i <= game_instance.server_pendings.length-1; i++) {
+			//	var pending_pack = game_instance.server_pendings[i];
+            //
+             //   if ((seq_to_delete) == parseInt(pending_pack.s)) {
+			//		seq_index = i;
+			//	}
+			//	if (game_instance.current_seq == parseInt(pending_pack.s)) {
+			//		break;
+			//	}
+			//}
+			//// Delete old pendings
+			//if (seq_index != -1) {
+			//	var number_to_clear = Math.abs(seq_index - (-1));
+			//	game_instance.server_pendings.splice(0, number_to_clear);
+			//}
 
-                if ((seq_to_delete) == parseInt(pending_pack.s)) {
-					seq_index = i;
-				}
-				if (game_instance.current_seq == parseInt(pending_pack.s)) {
-					break;
-				}
-			}
-			// Delete old pendings
-			if (seq_index != -1) {
-				var number_to_clear = Math.abs(seq_index - (-1));
-				game_instance.server_pendings.splice(0, number_to_clear);
-			}
-
-			if (game_instance.server_pendings.length) {
-				game_instance.apply_pendings(game_instance.current_seq-1);
-			}
+			//if (game_instance.server_pendings.length) {
+            game_instance.apply_pendings();
+			//}
 		}
 	}
 };

@@ -3,12 +3,14 @@ var current_pid;
 var current_session;
 
 var game_client = new Client();
+var core_instance = new Core();
 
 socket.on('connect', function() {
   console.log("Connection established");
   
   current_pid = socket.id;
   current_session = new GameSession();
+  current_session.core_instance = core_instance;
   
   game_client.init_ui();
 

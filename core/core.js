@@ -8,6 +8,7 @@ var Core = function() {
 };
 
 Core.physics_update_period = Math.round(1000/66); // Shared value for phys update interval
+Core.server_pending_per_frame = 20; // Shared value for phys update interval
 
 Core.prototype.handle_server_input = function() {
 

@@ -24,7 +24,7 @@ var GameSession = function() {
 	this.bullet_local_history = {};
 	this.game_entities = [];
 	this.gid = '';
-	this.core_instance = new Core();
+	this.core_instance;
 	this.current_player_link = false;
 	this.delta_t = 0;
 
@@ -78,6 +78,8 @@ GameSession.prototype.get_free_places = function() {
 };
 
 GameSession.prototype.add_player = function(player_data) {
+    player_data.set_start_pos(player_data.x, (150 * (this.players.length + 1)), player_data.a);
+    player_data.y = player_data.start_y;
 	this.players.push(player_data);
 	return this.players;
 };
@@ -163,54 +165,45 @@ GameSession.prototype.apply_from_pack = function(gs_data) {
 
 // Server method
 // Analyze inputs and run simple algorithms
-GameSession.prototype.apply_pendings = function(seq_to_apply) {
+GameSession.prototype.apply_pendings = function() {
+    var pendings_len = this.server_pendings.length;
+    var pendings_to_proceed = this.server_pendings.splice(0, (pendings_len >= Core.server_pending_per_frame ? Core.server_pending_per_frame : pendings_len));
 
-	var i = 0;
-    for (pending of this.server_pendings) {
-		//var pending = this.server_pendings[i];
+    for (pending of pendings_to_proceed) {
 
-		if (parseInt(pending.s) == parseInt(seq_to_apply)) {
+        var player = this.get_player_by_id(pending.pid);
 
-            var player = this.get_player_by_id(pending.pid);
+        var arr = pending.i.split("-");
 
+        if (arr.indexOf("f") != -1 && !player.is_moving()) {
+            var old_data = this.local_history[pending.s.toString()];
+            var old_p_data = { "x": 0, "y": 0, "a": 0 };
+            for (var i=4; i <= old_data.length-1; i++) {
 
-            //var new_points = this.core_instance.input_to_points(player, pending.i);
+                if (old_data[i][0] == pending.pid) {
 
-            var arr = pending.i.split("-");
-            var bullet_data;
+                    old_p_data.x = old_data[i][1];
+                    old_p_data.y = old_data[i][2];
+                    old_p_data.a = old_data[i][3];
 
-            if (arr.indexOf("f") != -1 && !player.is_moving()) {
-                var old_data = this.local_history[seq_to_apply.toString()];
-                var old_p_data = { "x": 0, "y": 0, "a": 0 };
-                for (var i=4; i <= old_data.length-1; i++) {
-
-                    if (old_data[i][0] == pending.pid) {
-
-                        old_p_data.x = old_data[i][1];
-                        old_p_data.y = old_data[i][2];
-                        old_p_data.a = old_data[i][3];
-
-                        break;
-                    }
+                    break;
                 }
-
-                bullet_data = this.core_instance.init_fly_vector(old_p_data.x, old_p_data.y, old_p_data.a, Player.radius);
-                //var curr_dt = new Date().getTime();
-                //var diff = (curr_dt - pending.t);
-                //var p_diff = (curr_dt - old_data[3])
-                //console.log("End vec is:", bullet_data);
-
-                player.set_moving_pos(bullet_data.x, bullet_data.y);
-                player.set_is_moving();
-
-                //console.log(diff, p_diff, this.current_seq, old_data[0]);
-                //this.add_bullet(pending.pid, bullet_data);
             }
 
-            this.server_pendings.splice(i, 1);
+            var move_vector = this.core_instance.init_fly_vector(old_p_data.x, old_p_data.y, old_p_data.a, Player.radius);
+            //var curr_dt = new Date().getTime();
+            //var diff = (curr_dt - pending.t);
+            //var p_diff = (curr_dt - old_data[3])
+            //console.log("End vec is:", bullet_data);
 
+            player.set_moving_pos(move_vector.x, move_vector.y);
+            player.set_is_moving();
+
+            //console.log(diff, p_diff, this.current_seq, old_data[0]);
+            //this.add_bullet(pending.pid, bullet_data);
         }
-        i+=1;
+
+        pendings_to_proceed.shift();
 	}
 	
 	return this;
@@ -319,75 +312,6 @@ GameSession.prototype.server_handle_client_input = function(packet_data, player_
 GameSession.prototype.client_handle_server_snapshot = function(packet_data) {
 	return this.core_instance.client_handle_server_snapshot.call(this, packet_data);
 };
-
-GameSession.prototype.analyze_collisions = function() {
-	if (this.players.length) {
-        var need_stop = false;
-        for (player_data of this.players) {
-			
-			if (player_data.x >= GameSession.world_width) {
-                player_data.x = GameSession.world_width;
-                need_stop = true;
-            }
-			if (player_data.x <= 0) {
-                player_data.x = 0;
-                need_stop = true;
-            }
-			if (player_data.y >= GameSession.world_height) {
-                player_data.y = GameSession.world_height;
-                need_stop = true;
-            }
-			if (player_data.y <= 0) {
-                player_data.y = 0;
-                need_stop = true;
-            }
-            if (need_stop) {
-                player_data.set_moving_pos(0, 0);
-                player_data.unset_is_moving();
-            }
-		}
-	}
-    return true;
-};
-
-GameSession.prototype.inc_barrel_angle = function() {
-	if (this.players.length) {
-        var offset = (Player.barrel_rotation_speed * this.delta_t).fixed();
-        //console.log(this.delta_t);
-
-        for (player_data of this.players) {
-            if ((player_data.a + offset) >= 180) {
-                player_data.a = 180;
-                player_data.a *= -1;
-            }
-            player_data.a = (player_data.a + offset).fixed();
-
-        }
-
-	}
-    return true;
-};
-
-GameSession.prototype.server_update_physics = function () {
-    var move_speed = (Player.move_speed * this.delta_t);
-    for (player_data of this.players) {
-        if (player_data.is_moving()) {
-            player_data.x = this.core_instance.lerp(player_data.x, player_data.fly_x, move_speed);
-            player_data.y = this.core_instance.lerp(player_data.y, player_data.fly_y, move_speed);
-
-            if (Math.round(player_data.x) == Math.round(player_data.fly_x) && Math.round(player_data.y) == Math.round(player_data.fly_y)) {
-
-                player_data.set_moving_pos(0, 0);
-                player_data.x = 50;
-                player_data.y = 50;
-                player_data.unset_is_moving();
-            }
-            //console.log(player_data.x, player_data.y, player_data.fly_x, player_data.fly_y);
-        }
-    }
-    return true;
-};
-
 
 //server side we set the 'Core' class to a global type, so that it can use it anywhere.
 if( 'undefined' != typeof global ) {
