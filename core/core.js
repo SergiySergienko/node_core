@@ -65,7 +65,7 @@ Core.prototype.init_fly_vector = function (x, y, angle, radius) {
 Core.prototype.angle_to_xy = function (current_angle, radius, center_x, center_y) {
     var result = {x:0, y:0};
     var normalized_angle = (current_angle < 0 ? (180 + (180 - Math.abs(current_angle))) : current_angle);
-    console.log("Normal angle:", normalized_angle, current_angle);
+
     var angle_radians = normalized_angle * (Math.PI/180);
     result.x = (center_x + (radius * Math.cos(angle_radians))).fixed();
     result.y = (center_y + (radius * Math.sin(angle_radians))).fixed();
