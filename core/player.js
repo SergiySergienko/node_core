@@ -24,7 +24,7 @@ var Player = function () {
 
 };
 
-Player.barrel_rotation_speed = 100;
+Player.barrel_rotation_speed = 55.1;
 Player.radius = 40;
 Player.move_speed = 1;
 

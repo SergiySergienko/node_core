@@ -9,7 +9,8 @@ var Client = function () {
 };
 
 Client.prototype.init_ui = function () {
-	this.game_ui = new Phaser.Game(this.game_width, this.game_height, Phaser.AUTO, 'game', this);
+	// We should use CANVAS only for fu**ing windows operations systems
+	this.game_ui = new Phaser.Game(this.game_width, this.game_height, Phaser.CANVAS, 'game', this);
 };
 
 Client.prototype.redraw_debug_info = function() {
@@ -37,6 +38,7 @@ Client.prototype.create = function () {
 	this.bullets_mapping = {};
 
 	this.delta_t = 0;
+    this.some = this.game.add.text(300, 10, 'serv lag: 0 ms', { fill: '#ffffff', fontSize: '11px' });
 
 	this.server_lag_text = this.game.add.text(10, 10, 'serv lag: 0 ms', { fill: '#ffffff', fontSize: '11px' });
 	this.client_lag_text = this.game.add.text(100, 10, 'client lag: 0 ms', { fill: '#ffffff', fontSize: '11px' });
@@ -55,13 +57,16 @@ Client.prototype.update = function () {
 
     this.delta_t = (this.game.time.elapsed/1000).fixed();
 	current_session.delta_t = this.delta_t;
+    //this.some.setText(this.delta_t);
 
-	current_session.client_proceed_pendings();
+
 
 	this.redraw_debug_info();
 
     this.redraw_players(current_session.players);
     this.rotate_players(current_session.players);
+
+    current_session.client_proceed_pendings();
 
     //var new_pos = current_session.core_instance.client_handle_input.call(this);
     //if (new_pos.x != 0 || new_pos.y != 0) {
@@ -75,6 +80,8 @@ Client.prototype.update = function () {
 
 Client.prototype.render = function () {
 	this.update_client_lag_info();
+
+	//this.game.debug.spriteInfo(this.players_mapping[current_pid], 32, 32);
 };
 
 Client.prototype.run_click = function () {

@@ -28,11 +28,12 @@ BasePhysics.prototype.inc_barrel_angle = function(player_data, delta_t) {
 
     var offset = (Player.barrel_rotation_speed * delta_t).fixed();
 
-    if ((player_data.a + offset) >= 180) {
-        player_data.a = 180;
-        player_data.a *= -1;
+    if ((player_data.a + offset) >= 360) {
+        //player_data.a = (Math.abs(360 - (player_data.a + offset))).fixed();
+        player_data.a = 0;
     }
-    player_data.a = (player_data.a + offset).fixed();
+
+    player_data.a = (player_data.a + offset).fixed(1);
 
     return true;
 };

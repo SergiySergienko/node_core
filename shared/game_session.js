@@ -176,31 +176,12 @@ GameSession.prototype.apply_pendings = function() {
         var arr = pending.i.split("-");
 
         if (arr.indexOf("f") != -1 && !player.is_moving()) {
-            var old_data = this.local_history[pending.s.toString()];
-            var old_p_data = { "x": 0, "y": 0, "a": 0 };
-            for (var i=4; i <= old_data.length-1; i++) {
 
-                if (old_data[i][0] == pending.pid) {
-
-                    old_p_data.x = old_data[i][1];
-                    old_p_data.y = old_data[i][2];
-                    old_p_data.a = old_data[i][3];
-
-                    break;
-                }
-            }
-
-            var move_vector = this.core_instance.init_fly_vector(old_p_data.x, old_p_data.y, old_p_data.a, Player.radius);
-            //var curr_dt = new Date().getTime();
-            //var diff = (curr_dt - pending.t);
-            //var p_diff = (curr_dt - old_data[3])
-            //console.log("End vec is:", bullet_data);
+            var move_vector = this.core_instance.init_fly_vector(player.x, player.y, player.a, Player.radius);
 
             player.set_moving_pos(move_vector.x, move_vector.y);
             player.set_is_moving();
 
-            //console.log(diff, p_diff, this.current_seq, old_data[0]);
-            //this.add_bullet(pending.pid, bullet_data);
         }
 
         pendings_to_proceed.shift();

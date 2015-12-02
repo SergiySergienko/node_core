@@ -49,66 +49,40 @@ Client.prototype.redraw_players = function (players_data) {
     return true;
 };
 
+// TODO: Fix this method, learn how to inperpolate between angles
+// Make angle fix real smooth
+// User Phaer.Math if need
+// TODO: Ugly shit-coding. should be refactored and optimized
+
 Client.prototype.rotate_players = function (players_data) {
     if (players_data.length) {
+
         for (var i=0; i <= players_data.length-1; i++) {
 
             var p_data = players_data[i];
             var player_sprite = this.players_mapping[p_data.id];
             var px_per_frame = (Player.barrel_rotation_speed * this.delta_t).fixed();
 
-
             if (p_data.is_need_fix_angle()) {
 
-                var curr_dt = new Date().getTime();
-                var time_diff = ((curr_dt - current_session.last_applied_packet_time)/1000).fixed();  // diff sec between packet and now
-                //console.log(px_per_frame, time_diff, this.delta_t);
-
-                //var frame_time = (1000/this.game.time.fps).fixed();
-
-                // 1000 ms = 60 times
-                // 0.387 = x
-                // 60 - 100
-                // 0.387 - x
-                // (0.387*100)/60
-                //var times = Math.round(time_diff / frame_time);
-                //console.log("Info: ", time_diff, frame_time, times);
-                //var preddicted_next_angle = (p_data.a + ((Player.barrel_rotation_speed * this.delta_t) * times)).fixed();
-
                 var current_sprite_angle = player_sprite.angle.fixed();
+                var normal_angle = (current_sprite_angle < 0 ? (180 + (180 + current_sprite_angle)) : current_sprite_angle);
 
-                var offset = ((time_diff / this.delta_t) * px_per_frame).fixed();
+                var rounded_server_angle = Math.round(p_data.a);
+                var rounded_normal_angle = Math.round(normal_angle);
 
+                if (rounded_server_angle <= rounded_normal_angle) {
+                    p_data.mark_angle_fixed();
+                }
+                else {
+                    var new_angle = Phaser.Math.linear(normal_angle, p_data.a, px_per_frame);
+                    player_sprite.angle = Phaser.Math.wrapAngle(new_angle, false);
+                }
 
-                //if (Math.abs(current_sprite_angle) > Math.abs(p_data.a)) {
-                //    // We are moving to fast, easy bro.
-                //    offset = (offset/2).fixed();
-                //}
-                //else {
-                //    // We are moving to slow. Faster, harder!!
-                //
-                //}
-
-                var next = (p_data.a + offset).fixed();
-
-                p_data.mark_angle_fixed();
-
-                //if (current_sprite_angle.fixed(1) == next.fixed(1)) {
-                //    console.log("correct");
-                //    current_session.get_player_by_id(p_data.id).mark_angle_fixed();
-                //}
-                //else {
-                    //console.log("Lerping angle", current_sprite_angle, next);
-                    //console.log("Angle info before", current_sprite_angle, p_data.a, next);
-                    player_sprite.angle = current_session.core_instance.lerp(current_sprite_angle, next, (Player.barrel_rotation_speed * this.delta_t).fixed());
-                    //console.log("After", current_sprite_angle, p_data.a, next);
-                    //player_sprite.angle = next;
-                //}
             }
             else {
                 player_sprite.angle += px_per_frame;
             }
-            //console.log("Angles: ", player_sprite.angle);
 
         }
     }
