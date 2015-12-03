@@ -3,10 +3,16 @@
 // and user's join/delete flow
 //
 var UUID = require('node-uuid');
+require("./core/base_body.js");
+require("./core/circle.js");
+require("./core/save_point.js");
+require("./core/box.js");
 require("./core/player.js");
 require("./core/core.js");
 require("./shared/game_session.js");
 require("./shared/physics.methods.js");
+require("./shared/map_manager.js");
+require("./shared/ext/env_builder.js");
 
 module.exports = {
 	games: {},
@@ -18,6 +24,7 @@ module.exports = {
 	max_players_per_game: 2,
     core_instance: new Core(),
     base_physics_instance: new BasePhysics(),
+    map_manager_instance: new MapManager(),
 
 	find_game: function(socket) {
 		var game;
@@ -59,8 +66,11 @@ module.exports = {
         var curr_game = new GameSession();
         curr_game.core_instance = this.core_instance;
         this.base_physics_instance.core_instance = this.core_instance;
+        var curr_map = this.map_manager_instance.get_rnd_map();
 
 		curr_game.gid = UUID();
+        curr_game.set_map_data(curr_map);
+        curr_game.build_environment();
 		this.games[curr_game.gid] = curr_game;
 		this.games_count += 1;
 
@@ -118,6 +128,7 @@ module.exports = {
                 this.base_physics_instance.server_update_physics(player_data, delta_t);
                 this.base_physics_instance.inc_barrel_angle(player_data, delta_t);
                 this.base_physics_instance.analyze_collisions(player_data, delta_t);
+                this.base_physics_instance.analyze_collisions_between_players(player_data, game_instance.game_entities);
             }
         }
 

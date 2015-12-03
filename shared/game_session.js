@@ -28,6 +28,8 @@ var GameSession = function() {
 	this.current_player_link = false;
 	this.delta_t = 0;
 
+	this.current_map_data;
+
     this.physics_timer;
     this.broadcast_timer;
     this.seq_inc_timer;
@@ -40,6 +42,11 @@ GameSession.world_width = 640;
 GameSession.world_height = 480;
 GameSession.bullet_fly_max_length = 350;
 GameSession.bullet_fly_speed = 0.5;
+
+GameSession.prototype.set_map_data = function(map_data) {
+	this.current_map_data = map_data;
+	return this;
+};
 
 GameSession.prototype.increment_seq = function() {
 	this.current_seq += 1;
@@ -84,16 +91,6 @@ GameSession.prototype.add_player = function(player_data) {
 	return this.players;
 };
 
-GameSession.prototype.add_box = function(box_data) {
-	this.game_entities.push(box_data);
-	return this.game_entities;
-};
-
-GameSession.prototype.add_entity = function(entity_type, entity_data) {
-	this.game_entities.push(entity_data);
-	return this.game_entities;
-};
-
 //
 // This function should return class instance of Player class
 //
@@ -113,7 +110,9 @@ GameSession.prototype.init_new_player = function(socket) {
 
 GameSession.prototype.to_pack = function(not_stringify) {
 	var data = [this.current_seq, this.players.length, this.server_render_time, new Date().getTime()];
-	for (var player of this.players) {
+
+    data.push(this.current_map_data[0]);
+	for (player of this.players) {
 		data.push(player.to_pack());
 	}
     if (not_stringify) {
@@ -125,22 +124,24 @@ GameSession.prototype.to_pack = function(not_stringify) {
 GameSession.prototype.parse_pack = function(gs_data) {
 	var result = {};
 	var data = JSON.parse(gs_data);
+    var players_offset = 5;
 	
 	result.seq = parseInt(data[0]);
 	result.players_len = parseInt(data[1]);
 	result.server_render_time = parseInt(data[2]);
 	result.pack_time = parseInt(data[3]);
+    result.map_id = data[4];
 	result.players = [];
 	
 	for (var i = 0; i <= result.players_len-1; i ++) {
-		var p_data = data[4+i];
+		var p_data = data[players_offset+i];
 		
 		var player = this.init_new_player({ id: p_data[0] });
 		player.x = p_data[1];
 		player.y = p_data[2];
 		player.a = p_data[3];
 		
-		// this is bullet coords
+		// this is movement end coords
 		if (p_data[4] && p_data[5]) {
 			player.fly_x = p_data[4];
 			player.fly_y = p_data[5];
@@ -149,7 +150,7 @@ GameSession.prototype.parse_pack = function(gs_data) {
 		result.players.push(player);
 		
 	}
-	
+
 	return result;
 };
 
@@ -159,6 +160,9 @@ GameSession.prototype.apply_from_pack = function(gs_data) {
 	this.server_render_time = data.server_render_time;
 	
 	this.players = data.players;
+    this.current_map_data = [data.map_id, map_manager_instance.get_map_data_by_id(data.map_id)];
+
+    this.build_environment();
 	
 	return this;
 };

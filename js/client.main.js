@@ -4,6 +4,7 @@ var current_session;
 
 var game_client = new Client();
 var core_instance = new Core();
+var map_manager_instance = new MapManager();
 
 socket.on('connect', function() {
   console.log("Connection established");

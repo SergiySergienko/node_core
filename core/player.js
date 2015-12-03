@@ -1,10 +1,9 @@
 var Player = function () {
-	
-	this.id = '';
+
+    this.body_type = 'player';
+
+    this.id = '';
 	this.socket = '';
-	
-	this.client_updates = [];
-	this.server_updates = [];
 
 	this.x = 0;
 	this.y = 0;
@@ -22,7 +21,11 @@ var Player = function () {
     this.is_moving_now = false;
     this.is_rotating = false;
 
+    this.radius = 40;
+
 };
+
+Player.prototype = new BaseBody();
 
 Player.barrel_rotation_speed = 55.1;
 Player.radius = 40;
@@ -37,16 +40,6 @@ Player.prototype.to_pack = function () {
         result.push(this.fly_y);
     }
     return result;
-};
-
-Player.prototype.set_pos = function (new_x, new_y, new_a) {
-	if (new_x)
-		this.x = new_x;
-	if (new_y)
-		this.y = new_y;
-	if (new_a)
-		this.a = new_a;
-	return this;
 };
 
 Player.prototype.reset_to_start = function () {
@@ -64,12 +57,6 @@ Player.prototype.set_start_pos = function (new_x, new_y, new_a) {
         this.start_y = new_y;
     if (new_a)
         this.start_a = new_a;
-    return this;
-};
-
-Player.prototype.set_angle = function (new_a) {
-    if (new_a)
-        this.a = new_a;
     return this;
 };
 

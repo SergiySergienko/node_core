@@ -4,6 +4,7 @@ var Client = function () {
 	this.game_height = GameSession.world_height;
 	this.max_pixels_num_to_jump = 100;
 	this.bullet_runned = false;
+    this.world_already_drawed = false;
 
     this.physics_update_interval;
 };
@@ -35,7 +36,7 @@ Client.prototype.create = function () {
 	this.game.stage.disableVisibilityChange = true;
 
 	this.players_mapping = {};
-	this.bullets_mapping = {};
+    this.bodies_mapping = {};
 
 	this.delta_t = 0;
     this.some = this.game.add.text(300, 10, 'serv lag: 0 ms', { fill: '#ffffff', fontSize: '11px' });
@@ -46,11 +47,6 @@ Client.prototype.create = function () {
 
     this.run_button = this.game.add.button(this.game.world.centerX - 95, this.game.world.height - 80, 'button', this.run_click, this, 2, 1, 0);
 
-    //this.physics_update_interval = setInterval(
-    //    function () {
-    //        current_session.client_proceed_pendings();
-    //    }.bind(this),
-    //    Core.physics_update_period);
 };
 
 Client.prototype.update = function () {
@@ -59,7 +55,10 @@ Client.prototype.update = function () {
 	current_session.delta_t = this.delta_t;
     //this.some.setText(this.delta_t);
 
-
+    if (!this.world_already_drawed) {
+        this.redraw_world_bodies(current_session.game_entities);
+        this.world_already_drawed = true;
+    }
 
 	this.redraw_debug_info();
 

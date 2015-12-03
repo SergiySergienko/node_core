@@ -65,6 +65,23 @@ BasePhysics.prototype.analyze_collisions = function(player_data, delta_t) {
 };
 
 
+// TODO: Finish this function
+// It should check collision between bodies
+
+BasePhysics.prototype.analyze_collisions_between_players = function(player_data, other_bodies, delta_t) {
+    "use strict";
+    other_bodies.forEach(function (el) {
+        if (el.body_type == 'circle') {
+            if (player_data.check_circle_collision_with(el)) {
+                console.log("COllision between", player_data, el);
+            }
+        }
+
+    });
+};
+
+
+
 //server side we set the 'Core' class to a global type, so that it can use it anywhere.
 if( 'undefined' != typeof global ) {
     module.exports.BasePhysics = global.BasePhysics = BasePhysics;
