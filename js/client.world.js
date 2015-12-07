@@ -47,6 +47,8 @@ Client.prototype.create = function () {
 
     this.run_button = this.game.add.button(this.game.world.centerX - 95, this.game.world.height - 80, 'button', this.run_click, this, 2, 1, 0);
 
+	this.graphics_instance = this.game.add.graphics(0, 0);
+
 };
 
 Client.prototype.update = function () {

@@ -11,7 +11,7 @@ var MapManager = function () {
                 },
                 {
                     'b_type': 'box',
-                    'x': 100,
+                    'x': 150,
                     'y': 100,
                     'w': 50,
                     'h': 50,
@@ -31,7 +31,7 @@ var MapManager = function () {
                 },
                 {
                     'b_type': 'box',
-                    'x': 100,
+                    'x': 150,
                     'y': 100,
                     'w': 30,
                     'h': 30,
@@ -39,7 +39,7 @@ var MapManager = function () {
                 },
                 {
                     'b_type': 'box',
-                    'x': 100,
+                    'x': 150,
                     'y': 200,
                     'w': 30,
                     'h': 30,

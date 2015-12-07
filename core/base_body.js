@@ -41,6 +41,24 @@ BaseBody.prototype.check_circle_collision_with = function (other_circle_body) {
     return result;
 };
 
+BaseBody.prototype.check_circle_with_box_collision = function (circle_body, box_body) {
+    var circle_distance = {};
+
+    circle_distance.x = Math.abs(circle_body.x - box_body.x);
+    circle_distance.y = Math.abs(circle_body.y - box_body.y);
+
+    if (circle_distance.x > (box_body.width/2 + circle_body.radius)) { return false; }
+    if (circle_distance.y > (box_body.height/2 + circle_body.radius)) { return false; }
+
+    if (circle_distance.x <= (box_body.width/2)) { return true; }
+    if (circle_distance.y <= (box_body.height/2)) { return true; }
+
+    var corner_distance_sq = Math.pow((circle_distance.x - (box_body.width/2)), 2) +
+                             Math.pow((circle_distance.y - (box_body.height/2)), 2);
+
+    return (corner_distance_sq <= Math.pow(circle_body.radius, 2));
+};
+
 BaseBody.prototype.apply_from_pack = function (data_to_apply) {
     if (data_to_apply.x) {
         this.x = data_to_apply.x;
