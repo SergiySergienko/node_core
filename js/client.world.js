@@ -20,7 +20,10 @@ Client.prototype.redraw_debug_info = function() {
 	if (current_session.client_render_time != 0)
 		this.client_lag_text.setText("client lag: " + current_session.client_render_time + " ms");
 	if (this.game.fps != 0)
-		this.fps_text.setText("FPS: " + this.game.time.fps);	
+		this.fps_text.setText("FPS: " + this.game.time.fps);
+
+	this.some.setText(current_session.server_pendings.length.toString());
+
 };
 
 Client.prototype.preload = function () {

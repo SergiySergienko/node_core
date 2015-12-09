@@ -71,20 +71,34 @@ BasePhysics.prototype.analyze_collisions = function(player_data, delta_t) {
 BasePhysics.prototype.analyze_collisions_between_players = function(player_data, other_bodies, delta_t) {
     "use strict";
     other_bodies.forEach(function (el) {
+        if (el.is_active) {
+
         switch (el.body_type) {
             case 'circle':
                 if (player_data.check_circle_collision_with(el)) {
-                    console.log("COllision between circle and circle");
+                    if (el.is_save_point()) {
+
+                        el.disable();
+                        player_data.set_start_pos(el.x, el.y, false);
+                        player_data.reset_to_start();
+
+                        console.log("COllision between player and save point");
+                    }
+                    else {
+                        console.log("COllision between player and some circle");
+                    }
                 }
                 break;
             case 'box':
                 if (player_data.check_circle_with_box_collision(player_data, el)) {
-                    console.log("COllision between Circle and Box");
+                    player_data.reset_to_start();
+                    console.log("COllision between player and Box");
                 }
                 break;
             default:
                 console.log("Unknown body type", el.body_type);
                 break;
+        }
         }
 
     });

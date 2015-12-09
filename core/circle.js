@@ -7,6 +7,10 @@ var Circle = function() {
 
 Circle.prototype = new BaseBody();
 
+Circle.prototype.is_save_point = function () {
+    return false;
+};
+
 Circle.prototype.apply_from_pack = function (data_to_apply) {
     if (data_to_apply.x) {
         this.x = data_to_apply.x;

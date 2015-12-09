@@ -221,10 +221,11 @@ GameSession.prototype.get_player_by_id = function(player_id) {
 GameSession.prototype.client_proceed_pendings = function() {
 
     var pending_data;
+	var i = 0;
 
     if (this.server_pendings.length > 0) {
 
-        for (var i=0; i <= this.server_pendings.length-1; i++) {
+        //for (var i=0; i <= this.server_pendings.length-1; i++) {
             pending_data = this.server_pendings[i];
             if ((this.current_seq - this.last_input_seq) >= 2) {
                 this.last_input_seq = 0;
@@ -281,7 +282,7 @@ GameSession.prototype.client_proceed_pendings = function() {
 
             this.last_applied_packet_time = pending_data.pack_time;
             this.server_pendings.splice(i, 1);
-        }
+        //}
     }
 
 	return true;

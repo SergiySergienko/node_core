@@ -4,14 +4,14 @@ var MapManager = function () {
             'bodies': [
                 {
                     'b_type': 'save_point',
-                    'x': 300,
-                    'y': 100,
+                    'x': 450,
+                    'y': 300,
                     'r': 40,
                     'is_static': 1
                 },
                 {
                     'b_type': 'box',
-                    'x': 150,
+                    'x': 300,
                     'y': 100,
                     'w': 50,
                     'h': 50,
@@ -24,14 +24,14 @@ var MapManager = function () {
             'bodies': [
                 {
                     'b_type': 'save_point',
-                    'x': 300,
+                    'x': 450,
                     'y': 250,
                     'r': 20,
                     'is_static': 1
                 },
                 {
                     'b_type': 'box',
-                    'x': 150,
+                    'x': 350,
                     'y': 100,
                     'w': 30,
                     'h': 30,
@@ -39,7 +39,7 @@ var MapManager = function () {
                 },
                 {
                     'b_type': 'box',
-                    'x': 150,
+                    'x': 350,
                     'y': 200,
                     'w': 30,
                     'h': 30,

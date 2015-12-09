@@ -6,6 +6,8 @@ var BaseBody = function() {
     this.y = 0;
     this.a = 0;
 
+    this.is_active = true;
+
 };
 
 BaseBody.prototype.set_pos = function (new_x, new_y, new_a) {
@@ -16,6 +18,11 @@ BaseBody.prototype.set_pos = function (new_x, new_y, new_a) {
     if (new_a)
         this.a = new_a;
     return this;
+};
+
+BaseBody.prototype.disable = function () {
+    this.is_active = false;
+    return true;
 };
 
 BaseBody.prototype.set_angle = function (new_a) {
