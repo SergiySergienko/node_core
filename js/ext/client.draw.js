@@ -91,7 +91,7 @@ Client.prototype.rotate_players = function (players_data) {
 
 Client.prototype.add_player = function (player_data) {
 
-    var player_sprite = this.game.add.sprite(player_data.x, player_data.y, 'mushroom');
+    var player_sprite = this.game.add.sprite(player_data.x, player_data.y, 'player');
     player_sprite.anchor.set(.5, .5);
     player_sprite.angle = player_data.a;
 

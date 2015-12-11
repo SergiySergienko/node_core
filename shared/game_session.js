@@ -2,169 +2,169 @@
 // This file should contains shared between client and server Game Session (World) State
 // and objects manipulation functions
 //
-var GameSession = function() { 
-	
-	this.last_update_time = new Date().getTime();
-	this.server_render_time = 0;
-	this.client_render_time = 0;
-	this.max_players_per_game = 2;
-	this.max_pack_time_difference = 100; // This is maximum MS difference between two snapshots
+var GameSession = function() {
 
-	this.current_seq = 0;
-	this.server_current_seq = 0;
-	this.last_input_seq = 0;
+    this.last_update_time = new Date().getTime();
+    this.server_render_time = 0;
+    this.client_render_time = 0;
+    this.max_players_per_game = 2;
+    this.max_pack_time_difference = 100; // This is maximum MS difference between two snapshots
+
+    this.current_seq = 0;
+    this.server_current_seq = 0;
+    this.last_input_seq = 0;
 
     this.last_applied_packet_time = 0;
 
-	this.local_history = {};
-	this.server_pendings = [];
+    this.local_history = {};
+    this.server_pendings = [];
 
-	this.players = [];
-	this.bullets = {};
-	this.bullet_local_history = {};
-	this.game_entities = [];
-	this.gid = '';
-	this.core_instance;
-	this.current_player_link = false;
-	this.delta_t = 0;
+    this.players = [];
+    this.bullets = {};
+    this.bullet_local_history = {};
+    this.game_entities = [];
+    this.gid = '';
+    this.core_instance;
+    this.current_player_link = false;
+    this.delta_t = 0;
 
-	this.current_map_data;
+    this.current_map_data;
 
     this.physics_timer;
     this.broadcast_timer;
     this.seq_inc_timer;
 
     this.show_debug = false;
-	
+
 };
 
-GameSession.world_width = 640;
-GameSession.world_height = 480;
-GameSession.bullet_fly_max_length = 350;
+GameSession.world_width = 1520;
+GameSession.world_height = 1000;
+GameSession.bullet_fly_max_length = 1100;
 GameSession.bullet_fly_speed = 0.5;
 
 GameSession.prototype.set_map_data = function(map_data) {
-	this.current_map_data = map_data;
-	return this;
+    this.current_map_data = map_data;
+    return this;
 };
 
 GameSession.prototype.increment_seq = function() {
-	this.current_seq += 1;
-	return this.current_seq;
+    this.current_seq += 1;
+    return this.current_seq;
 };
 
 GameSession.prototype.current_player = function() {
-	if (this.current_player_link) {
-		return this.current_player_link;
-	}
-	var player_id = current_pid;
-	
-	var p_arr = this.players.filter(function(obj) {
-		if (obj.id == player_id) {
-			return true;
-		}
-		return false;
-	});
+    if (this.current_player_link) {
+        return this.current_player_link;
+    }
+    var player_id = current_pid;
 
-	this.current_player_link = p_arr[0];
-	
-	return this.current_player_link;
+    var p_arr = this.players.filter(function(obj) {
+        if (obj.id == player_id) {
+            return true;
+        }
+        return false;
+    });
+
+    this.current_player_link = p_arr[0];
+
+    return this.current_player_link;
 };
 
 GameSession.prototype.delete_player = function(player_id) {
-	this.players = this.players.filter(function(obj) {
-		if (obj.id == player_id)
-			return false
-		return true
-	});
-	return this;
+    this.players = this.players.filter(function(obj) {
+        if (obj.id == player_id)
+            return false
+        return true
+    });
+    return this;
 };
 
 GameSession.prototype.get_free_places = function() {
-	return (this.players.length >= this.max_players_per_game ? 0 : (this.max_players_per_game - this.players.length));
+    return (this.players.length >= this.max_players_per_game ? 0 : (this.max_players_per_game - this.players.length));
 };
 
 GameSession.prototype.add_player = function(player_data) {
     player_data.set_start_pos(player_data.x, (150 * (this.players.length + 1)), player_data.a);
     player_data.y = player_data.start_y;
-	this.players.push(player_data);
-	return this.players;
+    this.players.push(player_data);
+    return this.players;
 };
 
 //
 // This function should return class instance of Player class
 //
 GameSession.prototype.init_new_player = function(socket) {
-	var player = new Player();
-	
-	player.id = socket.id;
-	player.socket = socket;
-	player.name = "John";
-	player.x = 50;
-	player.y = 50;
-	player.a = 0;
+    var player = new Player();
 
-	return player;
+    player.id = socket.id;
+    player.socket = socket;
+    player.name = "John";
+    player.x = 50;
+    player.y = 50;
+    player.a = 0;
+
+    return player;
 };
 
 
 GameSession.prototype.to_pack = function(not_stringify) {
-	var data = [this.current_seq, this.players.length, this.server_render_time, new Date().getTime()];
+    var data = [this.current_seq, this.players.length, this.server_render_time, new Date().getTime()];
 
     data.push(this.current_map_data[0]);
-	for (player of this.players) {
-		data.push(player.to_pack());
-	}
+    for (player of this.players) {
+        data.push(player.to_pack());
+    }
     if (not_stringify) {
         return data;
     }
-	return JSON.stringify(data);
+    return JSON.stringify(data);
 };
 
 GameSession.prototype.parse_pack = function(gs_data) {
-	var result = {};
-	var data = JSON.parse(gs_data);
+    var result = {};
+    var data = JSON.parse(gs_data);
     var players_offset = 5;
-	
-	result.seq = parseInt(data[0]);
-	result.players_len = parseInt(data[1]);
-	result.server_render_time = parseInt(data[2]);
-	result.pack_time = parseInt(data[3]);
+
+    result.seq = parseInt(data[0]);
+    result.players_len = parseInt(data[1]);
+    result.server_render_time = parseInt(data[2]);
+    result.pack_time = parseInt(data[3]);
     result.map_id = data[4];
-	result.players = [];
-	
-	for (var i = 0; i <= result.players_len-1; i ++) {
-		var p_data = data[players_offset+i];
-		
-		var player = this.init_new_player({ id: p_data[0] });
-		player.x = p_data[1];
-		player.y = p_data[2];
-		player.a = p_data[3];
-		
-		// this is movement end coords
-		if (p_data[4] && p_data[5]) {
-			player.fly_x = p_data[4];
-			player.fly_y = p_data[5];
-		}
+    result.players = [];
 
-		result.players.push(player);
-		
-	}
+    for (var i = 0; i <= result.players_len-1; i ++) {
+        var p_data = data[players_offset+i];
 
-	return result;
+        var player = this.init_new_player({ id: p_data[0] });
+        player.x = p_data[1];
+        player.y = p_data[2];
+        player.a = p_data[3];
+
+        // this is movement end coords
+        if (p_data[4] && p_data[5]) {
+            player.fly_x = p_data[4];
+            player.fly_y = p_data[5];
+        }
+
+        result.players.push(player);
+
+    }
+
+    return result;
 };
 
 GameSession.prototype.apply_from_pack = function(gs_data) {
-	var data = this.parse_pack(gs_data);	
-	
-	this.server_render_time = data.server_render_time;
-	
-	this.players = data.players;
+    var data = this.parse_pack(gs_data);
+
+    this.server_render_time = data.server_render_time;
+
+    this.players = data.players;
     this.current_map_data = [data.map_id, map_manager_instance.get_map_data_by_id(data.map_id)];
 
     this.build_environment();
-	
-	return this;
+
+    return this;
 };
 
 // Server method
@@ -189,30 +189,30 @@ GameSession.prototype.apply_pendings = function() {
         }
 
         pendings_to_proceed.shift();
-	}
-	
-	return this;
+    }
+
+    return this;
 };
 
 GameSession.prototype.get_player_by_id = function(player_id) {
-	result = false;
-	
-	var indx = -1;
-	for (var i=0; i <= this.players.length-1; i++) {
-		if (this.players[i].id == player_id) {
-			indx = i;
-			break;
-		}
-	}
-	
-	if (indx != -1) {
-		result = this.players[indx];
-	}
-	return result;
+    result = false;
+
+    var indx = -1;
+    for (var i=0; i <= this.players.length-1; i++) {
+        if (this.players[i].id == player_id) {
+            indx = i;
+            break;
+        }
+    }
+
+    if (indx != -1) {
+        result = this.players[indx];
+    }
+    return result;
 };
 
 //
-// This method call each client's requestAnimationFrame call !!! Be careful with it 
+// This method call each client's requestAnimationFrame call !!! Be careful with it
 // (any changes in this method will low down your FPS)
 // It should get last known postition from server, compare it with last postition from local history,
 // And make smooth fixes if need.
@@ -221,7 +221,7 @@ GameSession.prototype.get_player_by_id = function(player_id) {
 GameSession.prototype.client_proceed_pendings = function() {
 
     var pending_data;
-	var i = 0;
+    var i = 0;
 
     if (this.server_pendings.length > 0) {
 
@@ -285,18 +285,18 @@ GameSession.prototype.client_proceed_pendings = function() {
         //}
     }
 
-	return true;
+    return true;
 };
 
 //
 // Delegate this method to Core module
 //
 GameSession.prototype.server_handle_client_input = function(packet_data, player_id) {
-	return this.core_instance.server_handle_client_input.call(this, packet_data, player_id);
+    return this.core_instance.server_handle_client_input.call(this, packet_data, player_id);
 };
 
 GameSession.prototype.client_handle_server_snapshot = function(packet_data) {
-	return this.core_instance.client_handle_server_snapshot.call(this, packet_data);
+    return this.core_instance.client_handle_server_snapshot.call(this, packet_data);
 };
 
 //server side we set the 'Core' class to a global type, so that it can use it anywhere.
