@@ -38,8 +38,8 @@ var GameSession = function() {
 
 };
 
-GameSession.world_width = 1520;
-GameSession.world_height = 1000;
+GameSession.world_width = 760;
+GameSession.world_height = 500;
 GameSession.bullet_fly_max_length = 1100;
 GameSession.bullet_fly_speed = 0.5;
 

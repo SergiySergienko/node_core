@@ -29,8 +29,8 @@ Client.prototype.redraw_debug_info = function() {
 Client.prototype.preload = function () {
     console.log("Inside preload");
     this.game.time.advancedTiming = true;
-    this.game.load.image('bg', '/images/bg@x2.png');
-    this.game.load.image('player', '/images/player@x2.png');
+    this.game.load.image('bg', '/images/bg.png');
+    this.game.load.image('player', '/images/player.png');
 
     this.game.load.image('mushroom', 'images/mushroom2.png');
     this.game.load.image('ball', 'images/ball.png');
@@ -45,8 +45,8 @@ Client.prototype.create = function () {
     this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 
     // set game world and tile background
-    this.add.tileSprite(0, 0, 1520, 1000, 'bg');
-    this.world.setBounds(0, 0, 1520, 1000);
+    this.add.tileSprite(0, 0, 1520, 500, 'bg');
+    this.world.setBounds(0, 0, 1520, 500);
 
     this.players_mapping = {};
     this.bodies_mapping = {};
@@ -58,7 +58,7 @@ Client.prototype.create = function () {
     this.client_lag_text = this.game.add.text(100, 10, 'client lag: 0 ms', { fill: '#ffffff', fontSize: '11px' });
     this.fps_text = this.game.add.text(200, 10, 'FPS: 0', { fill: '#ffffff', fontSize: '11px' });
 
-    this.run_button = this.game.add.button(this.game.world.centerX - 95, this.game.world.height - 80, 'button', this.run_click, this, 2, 1, 0);
+    this.run_button = this.game.add.button(this.game_width / 2 - 95, this.game_height - 80, 'button', this.run_click, this, 2, 1, 0);
 
     this.graphics_instance = this.game.add.graphics(0, 0);
 
