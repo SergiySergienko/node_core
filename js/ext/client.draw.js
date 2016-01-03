@@ -49,6 +49,30 @@ Client.prototype.redraw_players = function (players_data) {
     return true;
 };
 
+Client.prototype.preddicted_redraw_players = function (players_data) {
+    "use strict";
+    if (players_data.length) {
+
+        var angle_offset = (Player.barrel_rotation_speed * this.delta_t).fixed(),
+            _self = this;
+
+        players_data.forEach(function(player_data) {
+            if (_self.players_mapping[player_data.id] && !player_data.is_moving()) {
+
+                var player_sprite = _self.players_mapping[player_data.id],
+                    new_angle = ((player_sprite.angle + angle_offset) >= 360 ? 0 : (player_sprite.angle + angle_offset).fixed(1));
+
+                var new_pos = current_session.core_instance.angle_to_xy(new_angle, Player.center_angle_radius, player_data.start_x, player_data.start_y, false);
+
+                player_sprite.x = new_pos.x;
+                player_sprite.y = new_pos.y;
+            }
+
+        }.bind(this));
+    }
+    return true;
+};
+
 // TODO: Fix this method, learn how to inperpolate between angles
 // Make angle fix real smooth
 // User Phaer.Math if need
@@ -60,10 +84,13 @@ Client.prototype.rotate_players = function (players_data) {
         for (var i=0; i <= players_data.length-1; i++) {
 
             var p_data = players_data[i];
+            if (p_data.is_moving()) continue;
+
             var player_sprite = this.players_mapping[p_data.id];
             var px_per_frame = (Player.barrel_rotation_speed * this.delta_t).fixed();
 
             if (p_data.is_need_fix_angle()) {
+
 
                 var current_sprite_angle = player_sprite.angle.fixed();
                 var normal_angle = (current_sprite_angle < 0 ? (180 + (180 + current_sprite_angle)) : current_sprite_angle);
@@ -71,7 +98,7 @@ Client.prototype.rotate_players = function (players_data) {
                 var rounded_server_angle = Math.round(p_data.a);
                 var rounded_normal_angle = Math.round(normal_angle);
 
-                if (rounded_server_angle <= rounded_normal_angle) {
+                if (rounded_server_angle <= rounded_normal_angle && !(Math.abs(rounded_normal_angle - rounded_server_angle) > 5)) {
                     p_data.mark_angle_fixed();
                 }
                 else {
@@ -119,20 +146,20 @@ Client.prototype.draw_line = function (from_pos, end_pos, color) {
     graphics.endFill();
 };
 
-Client.prototype.redraw_barrels = function () {
-
-    if (current_session.players.length) {
-        for (var i=0; i <= current_session.players.length-1; i++) {
-            var p_data = current_session.players[i];
-
-            if (this.players_mapping[p_data.id]) {
-                var barrel_xy = current_session.core_instance.angle_to_xy(p_data.a, Player.radius, this.players_mapping[p_data.id].x, this.players_mapping[p_data.id].y);;
-                this.players_mapping[p_data.id].barrel.x = (barrel_xy.x - this.players_mapping[p_data.id].x);
-                this.players_mapping[p_data.id].barrel.y = (barrel_xy.y - this.players_mapping[p_data.id].y);
-            }
-
-        }
-    }
-
-    return true;
-};
+//Client.prototype.redraw_barrels = function () {
+//
+//    if (current_session.players.length) {
+//        for (var i=0; i <= current_session.players.length-1; i++) {
+//            var p_data = current_session.players[i];
+//
+//            if (this.players_mapping[p_data.id]) {
+//                var barrel_xy = current_session.core_instance.angle_to_xy(p_data.a, Player.radius, this.players_mapping[p_data.id].x, this.players_mapping[p_data.id].y);;
+//                this.players_mapping[p_data.id].barrel.x = (barrel_xy.x - this.players_mapping[p_data.id].x);
+//                this.players_mapping[p_data.id].barrel.y = (barrel_xy.y - this.players_mapping[p_data.id].y);
+//            }
+//
+//        }
+//    }
+//
+//    return true;
+//};

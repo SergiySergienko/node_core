@@ -9,6 +9,8 @@ var Player = function () {
 	this.y = 0;
 	this.a = 0;
 
+    this.ca = 0;
+
     this.start_x = 0;
     this.start_y = 0;
     this.start_a = 0;
@@ -30,11 +32,12 @@ Player.prototype = new BaseBody();
 Player.barrel_rotation_speed = 55.1;
 Player.radius = 40;
 Player.move_speed = 1;
+Player.center_angle_radius = 50;
 
 
 Player.prototype.to_pack = function () {
     result = [];
-    result.push(this.id, this.x.fixed(), this.y.fixed(), this.a.fixed());
+    result.push(this.id, this.x.fixed(), this.y.fixed(), this.a.fixed(), this.ca.fixed(), this.start_x.fixed(), this.start_y.fixed());
     if (this.is_moving()) {
         result.push(this.fly_x);
         result.push(this.fly_y);

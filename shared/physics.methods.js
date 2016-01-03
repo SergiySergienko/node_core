@@ -24,16 +24,37 @@ BasePhysics.prototype.server_update_physics = function (player_data, delta_t) {
     return true;
 };
 
-BasePhysics.prototype.inc_barrel_angle = function(player_data, delta_t) {
+//BasePhysics.prototype.inc_barrel_angle = function(player_data, delta_t) {
+//
+//    var offset = (Player.barrel_rotation_speed * delta_t).fixed();
+//
+//    if ((player_data.a + offset) >= 360) {
+//        //player_data.a = (Math.abs(360 - (player_data.a + offset))).fixed();
+//        player_data.a = 0;
+//    }
+//
+//    player_data.a = (player_data.a + offset).fixed(1);
+//
+//    return true;
+//};
 
-    var offset = (Player.barrel_rotation_speed * delta_t).fixed();
+// TODO: FIX ANGLE CALCULATION AFTER CA=270 degrees and to 360
+// IMPORTANT!!!
+BasePhysics.prototype.inc_player_angle_position = function(player_data, delta_t) {
 
-    if ((player_data.a + offset) >= 360) {
-        //player_data.a = (Math.abs(360 - (player_data.a + offset))).fixed();
-        player_data.a = 0;
+    if (player_data.is_moving()) {
+        return true;
     }
 
-    player_data.a = (player_data.a + offset).fixed(1);
+    var angle_offset = (Player.barrel_rotation_speed * delta_t).fixed();
+    player_data.ca = ((player_data.ca + angle_offset) >= 360 ? 0 : (player_data.ca + angle_offset).fixed(1));
+    player_data.a = player_data.ca;
+    //player_data.a = ((player_data.ca + 90) >= 360 ? (270 + ((player_data.ca + 90) - 360)).fixed(1) : (player_data.ca + 90).fixed(1));
+    //console.log("AAA",player_data.a);
+
+    var new_pos = this.core_instance.angle_to_xy(player_data.ca, Player.center_angle_radius, player_data.start_x, player_data.start_y, false);
+    player_data.x = new_pos.x;
+    player_data.y = new_pos.y;
 
     return true;
 };

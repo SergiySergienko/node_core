@@ -140,11 +140,14 @@ GameSession.prototype.parse_pack = function(gs_data) {
         player.x = p_data[1];
         player.y = p_data[2];
         player.a = p_data[3];
+        player.ca = p_data[4];
+        player.start_x = p_data[5];
+        player.start_y = p_data[6];
 
         // this is movement end coords
-        if (p_data[4] && p_data[5]) {
-            player.fly_x = p_data[4];
-            player.fly_y = p_data[5];
+        if (p_data[7] && p_data[8]) {
+            player.fly_x = p_data[7];
+            player.fly_y = p_data[8];
         }
 
         result.players.push(player);
@@ -270,6 +273,7 @@ GameSession.prototype.client_proceed_pendings = function() {
 
                     if (player_data.fly_x && player_data.fly_y) {
                         player.set_moving_pos(player_data.fly_x, player_data.fly_y);
+                        player.set_is_moving();
                     }
                     else {
                         player.set_moving_pos(0, 0);

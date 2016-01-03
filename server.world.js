@@ -126,7 +126,8 @@ module.exports = {
             var delta_t = game_instance.delta_t;
             for (player_data of game_instance.players) {
                 this.base_physics_instance.server_update_physics(player_data, delta_t);
-                this.base_physics_instance.inc_barrel_angle(player_data, delta_t);
+                //this.base_physics_instance.inc_barrel_angle(player_data, delta_t);
+                this.base_physics_instance.inc_player_angle_position(player_data, delta_t);
                 this.base_physics_instance.analyze_collisions(player_data, delta_t);
                 this.base_physics_instance.analyze_collisions_between_players(player_data, game_instance.game_entities);
             }

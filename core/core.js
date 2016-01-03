@@ -62,9 +62,11 @@ Core.prototype.init_fly_vector = function (x, y, angle, radius) {
     return this.calc_bullet_end_pos(player_pos, barrel_pos);
 };
 
-Core.prototype.angle_to_xy = function (current_angle, radius, center_x, center_y) {
+Core.prototype.angle_to_xy = function (current_angle, radius, center_x, center_y, need_normalize) {
     var result = {x:0, y:0};
-    var normalized_angle = (current_angle < 0 ? (180 + (180 - Math.abs(current_angle))) : current_angle);
+    need_normalize = (need_normalize === undefined ? true : false);
+
+    var normalized_angle = (need_normalize ? (current_angle < 0 ? (180 + (180 - Math.abs(current_angle))) : current_angle) : current_angle);
 
     var angle_radians = normalized_angle * (Math.PI/180);
     result.x = (center_x + (radius * Math.cos(angle_radians))).fixed();
