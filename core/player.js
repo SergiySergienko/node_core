@@ -31,7 +31,7 @@ Player.prototype = new BaseBody();
 
 Player.barrel_rotation_speed = 55.1;
 Player.radius = 40;
-Player.move_speed = 50;
+Player.move_speed = 100;
 Player.center_angle_radius = 50;
 
 
@@ -59,7 +59,7 @@ Player.prototype.set_start_pos = function (new_x, new_y, new_a) {
     if (new_y)
         this.start_y = new_y;
     if (new_a)
-        this.start_a = new_a;
+        this.ca = new_a;
     return this;
 };
 

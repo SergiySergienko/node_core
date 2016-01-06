@@ -260,6 +260,8 @@ GameSession.prototype.client_proceed_pendings = function() {
                         this.current_player().unset_is_moving();
                     }
 
+                    this.current_player().set_start_pos(player_data.start_x, player_data.start_y, player_data.ca);
+
                 }
                 else {
                     // This is not current player, just set immediately new position
@@ -269,6 +271,7 @@ GameSession.prototype.client_proceed_pendings = function() {
                     var player = this.get_player_by_id(player_data.id);
 
                     player.set_pos(player_data.x, player_data.y, player_data.a);
+                    player.set_start_pos(player_data.start_x, player_data.start_y, player_data.ca);
                     player.mark_as_updated();
 
                     if (player_data.fly_x && player_data.fly_y) {

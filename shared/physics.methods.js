@@ -105,6 +105,7 @@ BasePhysics.prototype.analyze_collisions_between_players = function(player_data,
                     if (el.is_save_point()) {
 
                         el.disable();
+
                         player_data.set_start_pos(el.x, el.y, false);
                         player_data.reset_to_start();
 
