@@ -82,15 +82,6 @@ Client.prototype.update = function () {
     this.rotate_players(current_session.players);
 
     current_session.client_proceed_pendings();
-
-    //var new_pos = current_session.core_instance.client_handle_input.call(this);
-    //if (new_pos.x != 0 || new_pos.y != 0) {
-    //	if (this.players_mapping[current_pid]) {
-    //		this.players_mapping[current_pid].x += new_pos.x;
-    //		this.players_mapping[current_pid].y += new_pos.y;
-    //	}
-    //}
-
 };
 
 Client.prototype.render = function () {

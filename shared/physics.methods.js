@@ -4,20 +4,19 @@ var BasePhysics = function() {
 
 BasePhysics.prototype.server_update_physics = function (player_data, delta_t) {
 
-    if (!player_data.is_moving()) {
-        return true;
+    if (!player_data.is_moving()) return true;
+
+    var move_speed = (Player.move_speed * delta_t),
+        current_pos = { x: player_data.x, y: player_data.y },
+        target_pos  = { x: player_data.fly_x, y: player_data.fly_y };
+
+    var next_pos = this.core_instance.constant_move_to(current_pos, target_pos, move_speed);
+
+    if (next_pos.dist > 0) {
+        player_data.x += next_pos.x;
+        player_data.y += next_pos.y;
     }
-
-    var move_speed = (Player.move_speed * delta_t);
-
-    player_data.x = this.core_instance.lerp(player_data.x, player_data.fly_x, move_speed);
-    player_data.y = this.core_instance.lerp(player_data.y, player_data.fly_y, move_speed);
-
-
-    var x_diff = Math.abs(Math.round(player_data.fly_x) - Math.round(player_data.x));
-    var y_diff = Math.abs(Math.round(player_data.fly_y) - Math.round(player_data.y));
-
-    if (x_diff <= 2 && y_diff <= 2) {
+    else {
         player_data.reset_to_start();
     }
 
@@ -60,6 +59,9 @@ BasePhysics.prototype.inc_player_angle_position = function(player_data, delta_t)
 };
 
 BasePhysics.prototype.analyze_collisions = function(player_data, delta_t) {
+
+    if (!player_data.is_moving()) return true;
+
     var need_stop = false;
 
     if (player_data.x >= GameSession.world_width) {
@@ -91,6 +93,9 @@ BasePhysics.prototype.analyze_collisions = function(player_data, delta_t) {
 
 BasePhysics.prototype.analyze_collisions_between_players = function(player_data, other_bodies, delta_t) {
     "use strict";
+
+    if (!player_data.is_moving()) return true;
+
     other_bodies.forEach(function (el) {
         if (el.is_active) {
 

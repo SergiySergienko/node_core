@@ -40,7 +40,7 @@ var GameSession = function() {
 
 GameSession.world_width = 760;
 GameSession.world_height = 500;
-GameSession.bullet_fly_max_length = 1100;
+GameSession.bullet_fly_max_length = 700;
 GameSession.bullet_fly_speed = 0.5;
 
 GameSession.prototype.set_map_data = function(map_data) {
@@ -100,7 +100,7 @@ GameSession.prototype.init_new_player = function(socket) {
     player.id = socket.id;
     player.socket = socket;
     player.name = "John";
-    player.x = 50;
+    player.x = 100;
     player.y = 50;
     player.a = 0;
 

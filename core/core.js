@@ -30,6 +30,22 @@ Core.prototype.stop_update = function() {  window.cancelAnimationFrame( this.upd
 Core.prototype.lerp = function(p, n, t) { var _t = Number(t); _t = (Math.max(0, Math.min(1, _t))).fixed(); return (p + _t * (n - p)).fixed(); };
     //Simple linear interpolation between 2 vectors
 Core.prototype.v_lerp = function(v,tv,t) { return { x: this.lerp(v.x, tv.x, t), y:this.lerp(v.y, tv.y, t) }; };
+   // Move to point with constant speed
+Core.prototype.constant_move_to = function (current_pos, target_pos, move_speed) {
+
+    var x_diff = (target_pos.x - current_pos.x).fixed(),//376
+        y_diff = (target_pos.y - current_pos.y).fixed(),//-589
+        dist = Math.sqrt(Math.pow(x_diff, 2) + Math.pow(y_diff, 2)).fixed(), //141376 + -1178
+        vel_x = ((x_diff/dist) * move_speed).fixed(),
+        vel_y = ((y_diff/dist) * move_speed).fixed(),
+        result = {x: 0, y: 0, dist: 0};
+
+    if (dist > 1) {
+        result = { x: vel_x, y: vel_y, dist: dist };
+    }
+
+    return result;
+};
 
 Core.prototype.input_to_points = function (player, input_commands) {
 	if (player && input_commands) {

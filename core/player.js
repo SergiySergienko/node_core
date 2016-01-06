@@ -31,7 +31,7 @@ Player.prototype = new BaseBody();
 
 Player.barrel_rotation_speed = 55.1;
 Player.radius = 40;
-Player.move_speed = 1;
+Player.move_speed = 50;
 Player.center_angle_radius = 50;
 
 

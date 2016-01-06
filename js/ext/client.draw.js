@@ -25,8 +25,8 @@ Client.prototype.redraw_players = function (players_data) {
                     current_session.get_player_by_id(p_data.id).mark_position_fixed();
                 }
                 else {
-                    player_sprite.x = current_session.core_instance.lerp(player_sprite.x, p_data.x, move_speed);
-                    player_sprite.y = current_session.core_instance.lerp(player_sprite.y, p_data.y, move_speed);
+                    player_sprite.x = current_session.core_instance.lerp(player_sprite.x, p_data.x, this.delta_t);
+                    player_sprite.y = current_session.core_instance.lerp(player_sprite.y, p_data.y, this.delta_t);
                 }
 
                 if (current_session.show_debug) {
