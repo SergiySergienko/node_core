@@ -29,10 +29,12 @@ var Player = function () {
 
 Player.prototype = new BaseBody();
 
-Player.barrel_rotation_speed = 55.1;
+Player.self_rotation_speed = 40;
+Player.circle_movement_speed = 55.1;
 Player.radius = 40;
 Player.move_speed = 100;
-Player.center_angle_radius = 50;
+Player.center_angle_radius = 100;
+Player.start_angle_offset = 45;
 
 
 Player.prototype.to_pack = function () {
@@ -91,17 +93,6 @@ Player.prototype.set_as_rotating = function () {
 Player.prototype.stop_rotating = function () {
     this.is_rotating = false;
     return true;
-};
-
-Player.prototype.get_preddicted_angle = function () {
-    var result = this.a;
-
-    if ((result + Player.barrel_rotation_speed) > 180) {
-        result *= -1;
-    }
-    result += Player.barrel_rotation_speed;
-
-    return result;
 };
 
 Player.prototype.mark_as_updated = function () {

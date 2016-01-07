@@ -184,7 +184,7 @@ GameSession.prototype.apply_pendings = function() {
 
         if (arr.indexOf("f") != -1 && !player.is_moving()) {
 
-            var move_vector = this.core_instance.init_fly_vector(player.x, player.y, player.a, Player.radius);
+            var move_vector = this.core_instance.init_fly_vector(player.x, player.y, player.ca, Player.radius);
 
             player.set_moving_pos(move_vector.x, move_vector.y);
             player.set_is_moving();

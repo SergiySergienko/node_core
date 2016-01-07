@@ -25,8 +25,12 @@ Client.prototype.redraw_players = function (players_data) {
                     current_session.get_player_by_id(p_data.id).mark_position_fixed();
                 }
                 else {
-                    player_sprite.x = current_session.core_instance.lerp(player_sprite.x, p_data.x, this.delta_t);
-                    player_sprite.y = current_session.core_instance.lerp(player_sprite.y, p_data.y, this.delta_t);
+
+                    if (p_data.is_moving()) {
+                        // Lerping between 2 vectors
+                        player_sprite.x = current_session.core_instance.lerp(player_sprite.x, p_data.x, this.delta_t);
+                        player_sprite.y = current_session.core_instance.lerp(player_sprite.y, p_data.y, this.delta_t);
+                    }
                 }
 
                 if (current_session.show_debug) {
@@ -37,39 +41,39 @@ Client.prototype.redraw_players = function (players_data) {
                     }
                 }
             }
-            //else {
-            //    if (p_data.is_moving()) {
-            //        player_sprite.x = current_session.core_instance.lerp(player_sprite.x, p_data.fly_x, move_speed);
-            //        player_sprite.y = current_session.core_instance.lerp(player_sprite.y, p_data.fly_x, move_speed);
-            //    }
-            //}
+
+            if (!p_data.is_moving()) {
+                // Player is on start position Lerping between angles
+                this.player_angle_lerp(player_sprite, p_data);
+            }
 
         }
     }
     return true;
 };
 
-Client.prototype.preddicted_redraw_players = function (players_data) {
-    "use strict";
-    if (players_data.length) {
+Client.prototype.player_angle_lerp = function (player_sprite, player_data) {
+    if (!player_sprite.hasOwnProperty('ca')) player_sprite['ca'] = player_data.ca;
 
-        var angle_offset = (Player.barrel_rotation_speed * this.delta_t).fixed(),
-            _self = this;
+    var angle_offset = (Player.circle_movement_speed * this.delta_t).fixed(),
+        curr_ts = new Date().getTime(),
+        ts_diff = curr_ts - current_session.last_applied_packet_time,
+        current_angle = player_sprite.ca;
 
-        players_data.forEach(function(player_data) {
-            if (_self.players_mapping[player_data.id] && !player_data.is_moving()) {
 
-                var player_sprite = _self.players_mapping[player_data.id],
-                    new_angle = ((player_sprite.angle + angle_offset) >= 360 ? 0 : (player_sprite.angle + angle_offset).fixed(1));
-
-                var new_pos = current_session.core_instance.angle_to_xy(new_angle, Player.center_angle_radius, player_data.start_x, player_data.start_y, false);
-
-                player_sprite.x = new_pos.x;
-                player_sprite.y = new_pos.y;
-            }
-
-        }.bind(this));
+    if (ts_diff <= 30) {
+        current_angle = player_data.ca;
     }
+
+    var new_angle = ((current_angle + angle_offset) >= 360 ? 0 : (current_angle + angle_offset).fixed(1));
+
+    var new_pos = current_session.core_instance.angle_to_xy(new_angle, Player.center_angle_radius, player_data.start_x, player_data.start_y, false);
+
+    player_sprite.x = current_session.core_instance.lerp(player_sprite.x, new_pos.x, this.delta_t);
+    player_sprite.y = current_session.core_instance.lerp(player_sprite.y, new_pos.y, this.delta_t);
+
+    player_sprite.ca = new_angle;
+
     return true;
 };
 
@@ -86,30 +90,10 @@ Client.prototype.rotate_players = function (players_data) {
             var p_data = players_data[i];
             if (p_data.is_moving()) continue;
 
-            var player_sprite = this.players_mapping[p_data.id];
-            var px_per_frame = (Player.barrel_rotation_speed * this.delta_t).fixed();
+            var player_sprite = this.players_mapping[p_data.id],
+                new_angle = (player_sprite.ca >= (360 - Player.start_angle_offset) ? (player_sprite.ca - (360 - Player.start_angle_offset)) : (player_sprite.ca + Player.start_angle_offset));
 
-            if (p_data.is_need_fix_angle()) {
-
-
-                var current_sprite_angle = player_sprite.angle.fixed();
-                var normal_angle = (current_sprite_angle < 0 ? (180 + (180 + current_sprite_angle)) : current_sprite_angle);
-
-                var rounded_server_angle = Math.round(p_data.a);
-                var rounded_normal_angle = Math.round(normal_angle);
-
-                if (rounded_server_angle <= rounded_normal_angle && !(Math.abs(rounded_normal_angle - rounded_server_angle) > 5)) {
-                    p_data.mark_angle_fixed();
-                }
-                else {
-                    var new_angle = Phaser.Math.linear(normal_angle, p_data.a, px_per_frame);
-                    player_sprite.angle = Phaser.Math.wrapAngle(new_angle, false);
-                }
-
-            }
-            else {
-                player_sprite.angle += px_per_frame;
-            }
+            player_sprite.angle = Phaser.Math.wrapAngle(new_angle);
 
         }
     }
@@ -120,7 +104,7 @@ Client.prototype.add_player = function (player_data) {
 
     var player_sprite = this.game.add.sprite(player_data.x, player_data.y, 'player');
     player_sprite.anchor.set(.5, .5);
-    player_sprite.angle = player_data.a;
+    player_sprite.angle = 0;
 
 
     if (current_session.show_debug) {

@@ -77,7 +77,6 @@ Client.prototype.update = function () {
 
     this.redraw_debug_info();
 
-    this.preddicted_redraw_players(current_session.players);
     this.redraw_players(current_session.players);
     this.rotate_players(current_session.players);
 
