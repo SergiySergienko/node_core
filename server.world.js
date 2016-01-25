@@ -3,12 +3,12 @@
 // and user's join/delete flow
 //
 var UUID = require('node-uuid');
-require("./core/base_body.js");
-require("./core/circle.js");
-require("./core/save_point.js");
-require("./core/box.js");
-require("./core/player.js");
-require("./core/core.js");
+require("./shared/base_body.js");
+require("./shared/circle.js");
+require("./shared/save_point.js");
+require("./shared/box.js");
+require("./shared/player.js");
+require("./shared/core.js");
 require("./shared/game_session.js");
 require("./shared/physics.methods.js");
 require("./shared/map_manager.js");
